@@ -26,6 +26,7 @@ shared/mrbd.css        HUD theme tuned for the ~600x600 monocular display
 shared/mrbd.js         Input model: pinch / swipe / back (with desktop fallbacks)
 scripts/               new-app + dev server (zero-dependency Node)
 .github/workflows/     GitHub Pages deploy
+DESIGN.md              Visual language for HUD-style apps (the Drive HUD look)
 ```
 
 ## Adding an app
