@@ -1,6 +1,12 @@
 {
   "apps": [
     {
+      "id": "trending",
+      "name": "Trending",
+      "description": "A YouTube-style trending feed: browse popular videos and watch them right on the display.",
+      "path": "apps/trending/"
+    },
+    {
       "id": "drive-hud",
       "name": "Drive HUD",
       "description": "Live driving HUD: speed, posted limit, compass heading, and the next signal or stop ahead (GPS + OpenStreetMap).",
