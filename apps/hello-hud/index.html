@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hello HUD - MRBD</title>
+    <link rel="stylesheet" href="../../shared/mrbd.css" />
+  </head>
+  <body class="mrbd-page">
+    <main class="mrbd-stage">
+      <a class="mrbd-back" href="../../index.html">&lsaquo; apps</a>
+      <div class="mrbd-fill mrbd-center">
+        <div class="mrbd-big" id="clock">--:--</div>
+        <h1 id="greeting">Hello</h1>
+        <p class="mrbd-muted">Pinch to change the greeting</p>
+      </div>
+      <p class="mrbd-hint">Pinch <kbd>Enter</kbd> &middot; Back <kbd>Esc</kbd></p>
+    </main>
+
+    <script src="../../shared/mrbd.js"></script>
+    <script>
+      const greetings = ["Hello", "Hey there", "Good to see you", "Ready when you are", "Look up"];
+      const clock = document.getElementById("clock");
+      const greeting = document.getElementById("greeting");
+      let i = 0;
+
+      function tick() {
+        clock.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+      tick();
+      setInterval(tick, 1000);
+
+      MRBD.on("pinch", () => {
+        i = (i + 1) % greetings.length;
+        greeting.textContent = greetings[i];
+      });
+      MRBD.on("back", () => { location.href = "../../index.html"; });
+    </script>
+  </body>
+</html>

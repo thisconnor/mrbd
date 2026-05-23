@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{NAME}} - MRBD</title>
+    <link rel="stylesheet" href="../../shared/mrbd.css" />
+  </head>
+  <body class="mrbd-page">
+    <main class="mrbd-stage">
+      <a class="mrbd-back" href="../../index.html">&lsaquo; apps</a>
+      <div class="mrbd-fill mrbd-center">
+        <h1>{{NAME}}</h1>
+        <p class="mrbd-muted" id="status">Pinch to interact</p>
+      </div>
+      <p class="mrbd-hint">Pinch <kbd>Enter</kbd> &middot; Swipe <kbd>&larr;</kbd><kbd>&rarr;</kbd> &middot; Back <kbd>Esc</kbd></p>
+    </main>
+
+    <script src="../../shared/mrbd.js"></script>
+    <script>
+      const status = document.getElementById("status");
+      let count = 0;
+
+      MRBD.on("pinch", () => {
+        count++;
+        status.textContent = `Pinched ${count} time${count === 1 ? "" : "s"}`;
+      });
+      MRBD.on("back", () => { location.href = "../../index.html"; });
+    </script>
+  </body>
+</html>

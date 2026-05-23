@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MRBD - App Playground</title>
+    <link rel="stylesheet" href="./shared/mrbd.css" />
+    <style>
+      .mrbd-page { display: block; padding: 48px 24px 80px; }
+      .wrap { max-width: 920px; margin: 0 auto; }
+      header.hub { margin-bottom: 32px; }
+      header.hub .eyebrow {
+        color: var(--mrbd-accent);
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      header.hub h1 { font-size: 40px; margin: 6px 0 8px; letter-spacing: -0.02em; }
+      header.hub p { color: var(--mrbd-muted); margin: 0; max-width: 60ch; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      a.app {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        transition: border-color 0.15s, transform 0.15s, background 0.15s;
+      }
+      a.app:hover {
+        border-color: var(--mrbd-accent);
+        transform: translateY(-2px);
+        background: rgba(89, 212, 255, 0.06);
+      }
+      a.app h2 { font-size: 20px; margin: 0 0 6px; }
+      a.app p { color: var(--mrbd-muted); font-size: 15px; margin: 0; }
+      a.app .go { color: var(--mrbd-accent); font-size: 14px; margin-top: 14px; display: inline-block; }
+      .empty {
+        color: var(--mrbd-muted);
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 28px;
+      }
+      code { background: rgba(255, 255, 255, 0.08); padding: 2px 7px; border-radius: 6px; font-size: 0.9em; }
+      footer.hub { margin-top: 40px; color: var(--mrbd-muted); font-size: 14px; }
+    </style>
+  </head>
+  <body class="mrbd-page">
+    <div class="wrap">
+      <header class="hub">
+        <div class="eyebrow">Meta Ray-Ban Display</div>
+        <h1>App Playground</h1>
+        <p>
+          Build small web apps for the glasses' heads-up display, host them all here,
+          and ship to GitHub Pages. Add one with <code>npm run new -- "App name"</code>.
+        </p>
+      </header>
+
+      <main id="apps" class="grid"></main>
+
+      <footer class="hub">
+        Display target: ~600x600, monocular, full color. Shared theme &amp; input model live in <code>shared/</code>.
+      </footer>
+    </div>
+
+    <script>
+      const grid = document.getElementById("apps");
+      fetch("./apps.json")
+        .then((r) => {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(({ apps }) => {
+          if (!apps || !apps.length) {
+            grid.classList.remove("grid");
+            grid.innerHTML =
+              '<div class="empty">No apps yet. Run <code>npm run new -- "My first app"</code> to scaffold one.</div>';
+            return;
+          }
+          grid.innerHTML = apps
+            .map(
+              (a) => `
+            <a class="app" href="${a.path}">
+              <h2>${a.name}</h2>
+              <p>${a.description || ""}</p>
+              <span class="go">Open &rsaquo;</span>
+            </a>`
+            )
+            .join("");
+        })
+        .catch(() => {
+          grid.classList.remove("grid");
+          grid.innerHTML =
+            '<div class="empty">Couldn\'t load <code>apps.json</code>. Open this page through a server: run <code>npm run dev</code> and visit <code>http://localhost:8000</code> (the file:// protocol blocks fetch).</div>';
+        });
+    </script>
+  </body>
+</html>

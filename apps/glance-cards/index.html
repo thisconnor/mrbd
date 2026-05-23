@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glance Cards - MRBD</title>
+    <link rel="stylesheet" href="../../shared/mrbd.css" />
+  </head>
+  <body class="mrbd-page">
+    <main class="mrbd-stage">
+      <a class="mrbd-back" href="../../index.html">&lsaquo; apps</a>
+      <div class="mrbd-fill mrbd-center">
+        <div class="mrbd-card" style="width: 100%">
+          <div class="mrbd-muted" id="counter">1 / 1</div>
+          <h1 id="title" style="margin-top: 8px"></h1>
+          <p id="body" class="mrbd-muted" style="margin: 10px 0 0"></p>
+        </div>
+      </div>
+      <p class="mrbd-hint">
+        Swipe <kbd>&larr;</kbd><kbd>&rarr;</kbd> &middot; Pinch <kbd>Enter</kbd> to expand &middot; Back <kbd>Esc</kbd>
+      </p>
+    </main>
+
+    <script src="../../shared/mrbd.js"></script>
+    <script>
+      const cards = [
+        { title: "Weather", body: "18 and clear. Light wind from the west.", more: "Sunset 8:14pm. UV index low. No rain expected through tomorrow." },
+        { title: "Next event", body: "Standup in 25 min.", more: "10:30am - Video call - 6 attendees. Pinch to join from here." },
+        { title: "Messages", body: "2 unread from Alex.", more: "“Are we still on for lunch?” and “Sending the file now.”" },
+        { title: "Steps", body: "4,210 today.", more: "62% of your daily goal. 1.2km walked, ~180 kcal." },
+      ];
+      let i = 0;
+      let expanded = false;
+      const counter = document.getElementById("counter");
+      const title = document.getElementById("title");
+      const body = document.getElementById("body");
+
+      function render() {
+        const c = cards[i];
+        counter.textContent = `${i + 1} / ${cards.length}`;
+        title.textContent = c.title;
+        body.textContent = expanded ? c.more : c.body;
+      }
+      function go(step) {
+        i = (i + step + cards.length) % cards.length;
+        expanded = false;
+        render();
+      }
+
+      MRBD.on("swipe-left", () => go(1));
+      MRBD.on("swipe-right", () => go(-1));
+      MRBD.on("pinch", () => { expanded = !expanded; render(); });
+      MRBD.on("back", () => { location.href = "../../index.html"; });
+      render();
+    </script>
+  </body>
+</html>

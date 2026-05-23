@@ -1,0 +1,11 @@
+{
+  "name": "mrbd-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A playground for building and hosting web apps for the Meta Ray-Ban Display, deployed to GitHub Pages.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "new": "node scripts/new-app.mjs"
+  }
+}

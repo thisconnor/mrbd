@@ -1,0 +1,102 @@
+:root {
+  /* Meta Ray-Ban Display: ~600x600, monocular (right eye), ~20 deg FOV, full color */
+  --mrbd-w: 600px;
+  --mrbd-h: 600px;
+  --mrbd-safe: 36px;          /* keep content off the edges (FOV vignetting) */
+  --mrbd-radius: 28px;
+
+  --mrbd-bg: #07090c;
+  --mrbd-fg: #eef4ff;
+  --mrbd-muted: #93a0b4;
+  --mrbd-accent: #59d4ff;
+  --mrbd-accent-2: #b69bff;
+
+  --mrbd-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+.mrbd-page {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(1200px 800px at 50% -10%, #11161f, #05070a 60%);
+  color: var(--mrbd-fg);
+  font-family: var(--mrbd-font);
+  padding: 24px;
+}
+
+/* The display surface itself */
+.mrbd-stage {
+  position: relative;
+  width: var(--mrbd-w);
+  height: var(--mrbd-h);
+  max-width: 92vw;
+  max-height: 92vw;
+  aspect-ratio: 1 / 1;
+  padding: var(--mrbd-safe);
+  border-radius: var(--mrbd-radius);
+  background: var(--mrbd-bg);
+  color: var(--mrbd-fg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 22px;
+  line-height: 1.4;
+  box-shadow:
+    0 0 0 1px rgba(89, 212, 255, 0.18),
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    inset 0 0 120px rgba(89, 212, 255, 0.05);
+}
+
+.mrbd-stage h1,
+.mrbd-stage h2 { margin: 0; font-weight: 650; }
+.mrbd-stage h1 { font-size: 40px; letter-spacing: -0.01em; }
+
+.mrbd-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.mrbd-center { align-items: center; text-align: center; }
+
+.mrbd-muted { color: var(--mrbd-muted); }
+.mrbd-accent { color: var(--mrbd-accent); }
+.mrbd-big { font-size: 64px; font-weight: 700; letter-spacing: -0.02em; }
+
+.mrbd-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+
+.mrbd-hint {
+  position: absolute;
+  left: var(--mrbd-safe);
+  right: var(--mrbd-safe);
+  bottom: 18px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--mrbd-muted);
+}
+.mrbd-hint kbd {
+  font: inherit;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 1px 7px;
+}
+
+a.mrbd-back {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  color: var(--mrbd-muted);
+  text-decoration: none;
+  font-size: 15px;
+}
+a.mrbd-back:hover { color: var(--mrbd-fg); }

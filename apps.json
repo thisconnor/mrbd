@@ -1,0 +1,16 @@
+{
+  "apps": [
+    {
+      "id": "hello-hud",
+      "name": "Hello HUD",
+      "description": "Minimal heads-up display: a live clock and a greeting you cycle with a pinch.",
+      "path": "apps/hello-hud/"
+    },
+    {
+      "id": "glance-cards",
+      "name": "Glance Cards",
+      "description": "Swipe through a stack of glanceable cards; pinch to expand one.",
+      "path": "apps/glance-cards/"
+    }
+  ]
+}
