@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
 <title>Trending</title>
 <link rel="icon" href="data:,">
+<script src="https://accounts.google.com/gsi/client" async></script>
 <style>
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
   html, body {
@@ -22,19 +23,17 @@
   /* ——— Top bar ——— */
   .bar {
     position:absolute; top:0; left:0; right:0; height:64px;
-    display:flex; align-items:center; gap:14px;
-    padding:0 24px;
-    border-bottom:1px solid #222;
-    background:#000;
-    z-index:5;
+    display:flex; align-items:center; gap:12px;
+    padding:0 22px;
+    border-bottom:1px solid #222; background:#000; z-index:5;
   }
   .back {
     color:#fff; text-decoration:none;
     font-size:34px; line-height:1; font-weight:300;
-    width:30px; text-align:center;
+    width:26px; text-align:center; flex:0 0 auto;
   }
-  .brand { display:flex; align-items:center; gap:12px; font-size:26px; font-weight:600; letter-spacing:-0.01em; }
   .logo {
+    flex:0 0 auto;
     display:inline-block; width:38px; height:27px;
     background:#ff0000; border-radius:7px; position:relative;
   }
@@ -44,23 +43,27 @@
     border-style:solid; border-width:7px 0 7px 12px;
     border-color:transparent transparent transparent #fff;
   }
-  .count { margin-left:auto; color:#888; font-size:14px; font-variant-numeric:tabular-nums; }
+  .tabs { display:flex; gap:4px; margin-left:6px; }
+  .tab {
+    appearance:none; background:transparent; border:0; color:#aaa;
+    font:inherit; font-size:17px; font-weight:500;
+    padding:6px 8px 8px; cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  .tab.active { color:#fff; border-bottom-color:#ff0000; }
 
   /* ——— Feed ——— */
   .feed {
     position:absolute; top:64px; left:0; right:0; bottom:0;
     overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding:16px 24px 92px;
-    scroll-snap-type:y proximity;
-    scrollbar-width:none;
+    scroll-snap-type:y proximity; scrollbar-width:none;
   }
   .feed::-webkit-scrollbar { display:none; }
 
   .card {
-    display:block; width:100%;
-    margin-bottom:18px;
-    background:#181818;
-    border:2px solid transparent;
+    display:block; width:100%; margin-bottom:18px;
+    background:#181818; border:2px solid transparent;
     border-radius:16px; overflow:hidden;
     scroll-snap-align:center;
     transition:border-color 150ms ease, background 150ms ease;
@@ -68,9 +71,7 @@
   }
   .card.sel { border-color:#ff0000; background:#202020; }
 
-  .thumb {
-    position:relative; width:100%; aspect-ratio:16/9; background:#000;
-  }
+  .thumb { position:relative; width:100%; aspect-ratio:16/9; background:#000; }
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
   .thumb.noimg { background:#1c1c1c; }
 
@@ -78,15 +79,13 @@
     position:absolute; top:10px; left:10px;
     background:rgba(0,0,0,0.78); color:#fff;
     font-size:13px; font-weight:600; letter-spacing:0.02em;
-    padding:3px 9px; border-radius:7px;
-    font-variant-numeric:tabular-nums;
+    padding:3px 9px; border-radius:7px; font-variant-numeric:tabular-nums;
   }
   .play {
     display:none; position:absolute; top:50%; left:50%;
     transform:translate(-50%,-50%);
     width:66px; height:66px; border-radius:50%;
-    background:rgba(255,0,0,0.92);
-    box-shadow:0 4px 24px rgba(0,0,0,0.5);
+    background:rgba(255,0,0,0.92); box-shadow:0 4px 24px rgba(0,0,0,0.5);
   }
   .play::after {
     content:''; position:absolute; top:50%; left:54%;
@@ -99,48 +98,61 @@
   .meta { padding:12px 15px 15px; }
   .title {
     font-size:19px; font-weight:500; line-height:1.28;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
   .sub { margin-top:7px; color:#aaa; font-size:14px; line-height:1.2; }
+
+  /* ——— Auth / setup panel ——— */
+  .auth {
+    position:absolute; top:64px; left:0; right:0; bottom:0;
+    overflow-y:auto; padding:24px; scrollbar-width:none;
+    display:flex; align-items:flex-start; justify-content:center;
+  }
+  .auth::-webkit-scrollbar { display:none; }
+  .panel { width:100%; max-width:540px; padding:8px 0 48px; }
+  .panel.center { text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px; padding-top:48px; }
+  .panel h2 { font-size:30px; font-weight:600; letter-spacing:-0.01em; margin-bottom:6px; }
+  .panel .dim { color:#aaa; font-size:16px; line-height:1.45; }
+  .fld { display:block; margin:24px 0 16px; }
+  .fld span { display:block; color:#aaa; font-size:14px; margin-bottom:8px; }
+  .fld input {
+    width:100%; font:inherit; font-size:16px; color:#fff;
+    background:#181818; border:1px solid #333; border-radius:12px; padding:14px 16px;
+  }
+  .fld input:focus { outline:none; border-color:#ff0000; }
+  .btn {
+    appearance:none; font:inherit; font-size:18px; font-weight:500; color:#fff;
+    background:#cc0000; border:0; border-radius:100px; padding:14px 30px; cursor:pointer;
+  }
+  .btn:hover { background:#ff0000; }
+  .link { appearance:none; background:transparent; border:0; color:#8ab4f8; font:inherit; font-size:14px; cursor:pointer; text-decoration:underline; }
+  .steps { margin-top:24px; color:#bbb; font-size:14px; }
+  .steps summary { cursor:pointer; color:#fff; font-size:15px; }
+  .steps ol { margin:12px 0 0 20px; line-height:1.75; }
+  .steps b { color:#fff; font-weight:600; }
+  .steps code { background:#1c1c1c; border:1px solid #333; border-radius:6px; padding:1px 6px; font-size:13px; }
+  .spin { width:34px; height:34px; border:3px solid #333; border-top-color:#ff0000; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 
   /* ——— Hint ——— */
   .hint {
     position:absolute; left:0; right:0; bottom:0; height:64px;
     display:flex; align-items:center; justify-content:center;
     color:#888; font-size:15px;
-    background:linear-gradient(to top, #000 55%, rgba(0,0,0,0));
-    z-index:4;
+    background:linear-gradient(to top, #000 55%, rgba(0,0,0,0)); z-index:4;
   }
 
   /* ——— Player ——— */
-  .player {
-    position:absolute; inset:0; z-index:10;
-    background:#000; display:flex; flex-direction:column;
-  }
-  .pbar {
-    height:56px; flex:0 0 auto;
-    display:flex; align-items:center; gap:14px;
-    padding:0 18px;
-  }
+  .player { position:absolute; inset:0; z-index:10; background:#000; display:flex; flex-direction:column; }
+  .pbar { height:56px; flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:0 18px; }
   .pback {
-    flex:0 0 auto;
-    color:#fff; background:transparent;
-    border:1px solid #444; border-radius:100px;
-    padding:9px 18px; font:inherit; font-size:16px;
-    cursor:pointer;
+    flex:0 0 auto; color:#fff; background:transparent;
+    border:1px solid #444; border-radius:100px; padding:9px 18px; font:inherit; font-size:16px; cursor:pointer;
   }
   .pback:hover, .pback:focus { background:rgba(255,255,255,0.08); outline:none; }
-  .ptitle {
-    flex:1 1 auto; min-width:0;
-    color:#ddd; font-size:16px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
+  .ptitle { flex:1 1 auto; min-width:0; color:#ddd; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .frame { flex:1 1 auto; display:grid; place-items:center; background:#000; }
-  .frame iframe {
-    width:100%; aspect-ratio:16/9; max-height:100%;
-    border:0; display:block;
-  }
+  .frame iframe { width:100%; aspect-ratio:16/9; max-height:100%; border:0; display:block; }
 </style>
 </head>
 <body>
@@ -148,11 +160,15 @@
 
   <header class="bar">
     <a class="back" id="home" href="../../index.html" aria-label="Back to apps">&lsaquo;</a>
-    <div class="brand"><span class="logo"></span><span>Trending</span></div>
-    <div class="count" id="count"></div>
+    <span class="logo"></span>
+    <nav class="tabs">
+      <button class="tab active" id="tabTrending">Trending</button>
+      <button class="tab" id="tabSubs">Subscriptions</button>
+    </nav>
   </header>
 
   <main class="feed" id="feed"></main>
+  <div class="auth hidden" id="auth"></div>
 
   <div class="hint" id="hint">Swipe to browse &middot; Pinch to play</div>
 
@@ -171,65 +187,107 @@
 (() => {
   'use strict';
 
-  // Curated trending feed. Each entry's title/channel were fetched from
-  // YouTube's oEmbed endpoint and confirmed embeddable, so nothing here is
-  // fabricated. Keyless live-trending APIs (Piped/Invidious) are too
-  // unreliable to depend on, so this static set is the source of truth.
+  // Curated trending feed. Titles/channels came from YouTube's keyless oEmbed
+  // endpoint and each video is confirmed embeddable, so nothing here is faked.
   const FEED = [{"id":"dQw4w9WgXcQ","title":"Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)","channel":"Rick Astley"},{"id":"9bZkp7q19f0","title":"PSY - GANGNAM STYLE(\uac15\ub0a8\uc2a4\ud0c0\uc77c) M/V","channel":"officialpsy"},{"id":"kJQP7kiw5Fk","title":"Luis Fonsi - Despacito ft. Daddy Yankee","channel":"LuisFonsiVEVO"},{"id":"JGwWNGJdvx8","title":"Ed Sheeran - Shape of You (Official Music Video)","channel":"Ed Sheeran"},{"id":"OPf0YbXqDm0","title":"Mark Ronson - Uptown Funk (Official Video) ft. Bruno Mars","channel":"MarkRonsonVEVO"},{"id":"fJ9rUzIMcZQ","title":"Queen \u2013 Bohemian Rhapsody (Official Video Remastered)","channel":"Queen Official"},{"id":"RgKAFK5djSk","title":"Wiz Khalifa - See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack","channel":"Wiz Khalifa Music"},{"id":"60ItHLz5WEA","title":"Alan Walker - Faded","channel":"Alan Walker"},{"id":"hT_nvWreIhg","title":"OneRepublic - Counting Stars","channel":"OneRepublicVEVO"},{"id":"CevxZvSJLk8","title":"Katy Perry - Roar","channel":"KatyPerryVEVO"},{"id":"YQHsXMglC9A","title":"Adele - Hello (Official Music Video)","channel":"Adele"},{"id":"09R8_2nJtjg","title":"Maroon 5 - Sugar (Official Music Video)","channel":"Maroon5VEVO"},{"id":"e-ORhEE9VVg","title":"Taylor Swift - Blank Space","channel":"Taylor Swift"},{"id":"lp-EO5I60KA","title":"Ed Sheeran - Thinking Out Loud (Official Music Video)","channel":"Ed Sheeran"},{"id":"uelHwf8o7_U","title":"Eminem - Love The Way You Lie ft. Rihanna","channel":"EminemVEVO"},{"id":"450p7goxZqg","title":"John Legend - All of Me (Official Video)","channel":"johnlegendVEVO"},{"id":"0KSOMA3QBU0","title":"Katy Perry - Dark Horse ft. Juicy J","channel":"KatyPerryVEVO"},{"id":"nfWlot6h_JM","title":"Taylor Swift - Shake It Off","channel":"Taylor Swift"},{"id":"kffacxfA7G4","title":"Justin Bieber - Baby ft. Ludacris","channel":"JustinBieberVEVO"},{"id":"2Vv-BfVoq4g","title":"Ed Sheeran - Perfect (Official Music Video)","channel":"Ed Sheeran"},{"id":"pRpeEdMmmQ0","title":"Shakira - Waka Waka (This Time for Africa) (The Official 2010 FIFA World Cup\u2122 Song)","channel":"shakiraVEVO"},{"id":"jNQXAC9IVRw","title":"Me at the zoo","channel":"jawed"}];
 
-  // Shuffle a copy so each pull-up feels fresh.
-  const items = FEED.slice();
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = (Math.random() * (i + 1)) | 0;
-    [items[i], items[j]] = [items[j], items[i]];
-  }
+  const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+  const CID_KEY = 'yt_client_id';
 
   const feedEl = document.getElementById('feed');
+  const authEl = document.getElementById('auth');
   const player = document.getElementById('player');
   const frame  = document.getElementById('frame');
   const ptitle = document.getElementById('ptitle');
   const hint   = document.getElementById('hint');
-  document.getElementById('count').textContent = items.length + ' trending';
+  const tabTrending = document.getElementById('tabTrending');
+  const tabSubs = document.getElementById('tabSubs');
 
-  let mode = 'feed';   // 'feed' | 'player'
+  let mode = 'feed';      // 'feed' | 'player'
+  let view = 'trending';  // 'trending' | 'subs'
+  let items = [];
   let sel = 0;
-  const cards = [];
+  let cards = [];
+  let token = null;       // OAuth access token, kept in memory only
+  let tokenClient = null;
+  let subsCache = null;
 
   const esc = s => String(s).replace(/[&<>"]/g,
     c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 
-  feedEl.innerHTML = items.map((v, i) => `
-    <div class="card" data-i="${i}" role="button" tabindex="-1">
-      <div class="thumb">
-        <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy"
-             onerror="this.remove();this.parentNode.classList.add('noimg')">
-        <span class="rank">#${i + 1}</span>
-        <span class="play"></span>
-      </div>
-      <div class="meta">
-        <div class="title">${esc(v.title)}</div>
-        <div class="sub">${esc(v.channel)} &middot; Trending</div>
-      </div>
-    </div>`).join('');
+  function shuffled(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
 
-  feedEl.querySelectorAll('.card').forEach(el => {
-    cards.push(el);
-    const i = +el.dataset.i;
-    el.addEventListener('mouseenter', () => select(i));
-    el.addEventListener('click', e => { e.stopPropagation(); select(i); open(i); });
-  });
+  function ago(iso) {
+    if (!iso) return '';
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm';
+    if (s < 86400) return Math.round(s / 3600) + 'h';
+    if (s < 604800) return Math.round(s / 86400) + 'd';
+    if (s < 2629800) return Math.round(s / 604800) + 'w';
+    if (s < 31557600) return Math.round(s / 2629800) + 'mo';
+    return Math.round(s / 31557600) + 'y';
+  }
+
+  const authVisible = () => !authEl.classList.contains('hidden');
+
+  // ——— Feed rendering (shared by both tabs) ———
+  function renderFeed(list) {
+    items = list; sel = 0; cards = [];
+    feedEl.innerHTML = list.map((v, i) => {
+      const rank = view === 'trending' ? `<span class="rank">#${i + 1}</span>` : '';
+      const sub = view === 'trending'
+        ? esc(v.channel) + ' &middot; Trending'
+        : esc(v.channel) + (v.date ? ' &middot; ' + ago(v.date) + ' ago' : '');
+      return `
+      <div class="card" data-i="${i}" role="button" tabindex="-1">
+        <div class="thumb">
+          <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy"
+               onerror="this.remove();this.parentNode.classList.add('noimg')">
+          ${rank}<span class="play"></span>
+        </div>
+        <div class="meta"><div class="title">${esc(v.title)}</div><div class="sub">${sub}</div></div>
+      </div>`;
+    }).join('');
+    feedEl.querySelectorAll('.card').forEach(el => {
+      cards.push(el);
+      const i = +el.dataset.i;
+      el.addEventListener('mouseenter', () => select(i));
+      el.addEventListener('click', e => { e.stopPropagation(); select(i); open(i); });
+    });
+    showFeed();
+    if (cards.length) select(0);
+    feedEl.scrollTop = 0;
+  }
+
+  function showFeed() {
+    authEl.classList.add('hidden');
+    feedEl.classList.remove('hidden');
+    if (mode === 'feed') hint.classList.remove('hidden');
+  }
+  function showAuth(html) {
+    feedEl.classList.add('hidden');
+    hint.classList.add('hidden');
+    authEl.innerHTML = html;
+    authEl.classList.remove('hidden');
+    const p = authEl.querySelector('.panel');
+    if (p) p.addEventListener('click', e => e.stopPropagation());
+  }
 
   function select(i) {
     i = Math.max(0, Math.min(cards.length - 1, i));
     if (cards[sel]) cards[sel].classList.remove('sel');
     sel = i;
-    cards[sel].classList.add('sel');
-    cards[sel].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (cards[sel]) { cards[sel].classList.add('sel'); cards[sel].scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   }
 
   function open(i) {
     if (mode === 'player') return;
     const v = items[i];
+    if (!v) return;
     mode = 'player';
     ptitle.textContent = v.title;
     frame.innerHTML =
@@ -240,27 +298,193 @@
     player.classList.remove('hidden');
     hint.classList.add('hidden');
   }
-
   function close() {
     if (mode !== 'player') return;
     mode = 'feed';
-    frame.innerHTML = '';   // removing the iframe stops playback
+    frame.innerHTML = '';
     player.classList.add('hidden');
-    hint.classList.remove('hidden');
+    if (!authVisible()) hint.classList.remove('hidden');
   }
 
+  // ——— Tabs ———
+  function setView(v) {
+    view = v;
+    tabTrending.classList.toggle('active', v === 'trending');
+    tabSubs.classList.toggle('active', v === 'subs');
+    if (mode === 'player') close();
+    if (v === 'trending') renderFeed(shuffled(FEED));
+    else openSubs();
+  }
+  tabTrending.addEventListener('click', e => { e.stopPropagation(); setView('trending'); });
+  tabSubs.addEventListener('click', e => { e.stopPropagation(); setView('subs'); });
+
+  // ——— Subscriptions (OAuth) ———
+  const clientId = () => (localStorage.getItem(CID_KEY) || '').trim();
+
+  function openSubs() {
+    if (subsCache) { renderFeed(subsCache); return; }
+    if (!clientId()) return showSetup();
+    if (!token) return showSignIn();
+    loadSubs();
+  }
+
+  function showSetup() {
+    showAuth(`
+      <div class="panel">
+        <h2>Connect your YouTube</h2>
+        <p class="dim">Shows the latest uploads from channels you subscribe to. Read-only, and your sign-in stays in this browser.</p>
+        <label class="fld">
+          <span>OAuth Client ID</span>
+          <input id="cid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false" value="${esc(clientId())}">
+        </label>
+        <button class="btn" id="prim">Save &amp; continue</button>
+        <details class="steps">
+          <summary>How do I get a Client ID? (one-time, ~5 min)</summary>
+          <ol>
+            <li>Open <b>console.cloud.google.com</b>, create or pick a project.</li>
+            <li>APIs &amp; Services &rarr; Library &rarr; enable <b>YouTube Data API v3</b>.</li>
+            <li>OAuth consent screen &rarr; <b>External</b> &rarr; add your email as a <b>Test user</b>.</li>
+            <li>Credentials &rarr; Create credentials &rarr; <b>OAuth client ID</b> &rarr; <b>Web application</b>.</li>
+            <li>Under Authorized JavaScript origins add: <code>${esc(location.origin)}</code></li>
+            <li>Create, copy the <b>Client ID</b>, paste it above.</li>
+          </ol>
+        </details>
+      </div>`);
+    const inp = document.getElementById('cid');
+    document.getElementById('prim').addEventListener('click', e => {
+      e.stopPropagation();
+      const v = inp.value.trim();
+      if (!v) { inp.focus(); return; }
+      localStorage.setItem(CID_KEY, v);
+      token = null; tokenClient = null;
+      showSignIn();
+    });
+  }
+
+  function showSignIn() {
+    showAuth(`
+      <div class="panel center">
+        <h2>Sign in to load your feed</h2>
+        <p class="dim">Grant read-only access to your subscriptions.</p>
+        <button class="btn" id="prim">Sign in with Google</button>
+        <button class="link" id="reset">Use a different Client ID</button>
+      </div>`);
+    document.getElementById('prim').addEventListener('click', e => { e.stopPropagation(); signIn(); });
+    document.getElementById('reset').addEventListener('click', e => {
+      e.stopPropagation(); localStorage.removeItem(CID_KEY); token = null; tokenClient = null; showSetup();
+    });
+  }
+
+  function showLoading(msg) {
+    showAuth(`<div class="panel center"><div class="spin"></div><p class="dim">${esc(msg || 'Loading…')}</p></div>`);
+  }
+  function showError(msg, retry) {
+    showAuth(`<div class="panel center"><h2>Hmm.</h2><p class="dim">${esc(msg)}</p><button class="btn" id="prim">Try again</button></div>`);
+    document.getElementById('prim').addEventListener('click', e => { e.stopPropagation(); (retry || openSubs)(); });
+  }
+
+  function loadGIS() {
+    return new Promise((resolve, reject) => {
+      if (window.google && google.accounts && google.accounts.oauth2) return resolve();
+      let n = 0;
+      const t = setInterval(() => {
+        if (window.google && google.accounts && google.accounts.oauth2) { clearInterval(t); resolve(); }
+        else if (++n > 120) { clearInterval(t); reject(new Error('Google sign-in script did not load. Check your network and reload.')); }
+      }, 50);
+    });
+  }
+
+  async function signIn() {
+    try {
+      showLoading('Opening Google sign-in…');
+      await loadGIS();
+      if (!tokenClient) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId(),
+          scope: SCOPE,
+          callback: resp => {
+            if (resp && resp.access_token) { token = resp.access_token; loadSubs(); }
+            else showError('Sign-in was cancelled or denied.', signIn);
+          },
+          error_callback: err => {
+            showError('Sign-in failed (' + ((err && err.type) || 'error') + '). Make sure ' + location.origin +
+              ' is an authorized JavaScript origin on this Client ID, and that you are added as a test user.', showSignIn);
+          }
+        });
+      }
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    } catch (e) {
+      showError(e.message || String(e), showSignIn);
+    }
+  }
+
+  async function api(path, params) {
+    const url = new URL('https://www.googleapis.com/youtube/v3/' + path);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    if (r.status === 401) { token = null; throw new Error('auth'); }
+    if (!r.ok) {
+      let m = 'API error ' + r.status;
+      try { const j = await r.json(); if (j.error && j.error.message) m = j.error.message; } catch (_) {}
+      throw new Error(m);
+    }
+    return r.json();
+  }
+
+  async function loadSubs() {
+    try {
+      showLoading('Loading your subscriptions…');
+      const subs = await api('subscriptions', { part: 'snippet', mine: 'true', maxResults: '50' });
+      const chIds = (subs.items || []).map(i => i.snippet && i.snippet.resourceId && i.snippet.resourceId.channelId).filter(Boolean);
+      if (!chIds.length) return showError('No subscriptions found on this account.', () => setView('trending'));
+
+      const ch = await api('channels', { part: 'contentDetails', id: chIds.join(','), maxResults: '50' });
+      const uploads = (ch.items || [])
+        .map(c => c.contentDetails && c.contentDetails.relatedPlaylists && c.contentDetails.relatedPlaylists.uploads)
+        .filter(Boolean);
+
+      const per = await Promise.all(uploads.map(pl =>
+        api('playlistItems', { part: 'snippet', playlistId: pl, maxResults: '3' })
+          .then(r => r.items || []).catch(() => [])
+      ));
+
+      const seen = new Set(), out = [];
+      per.flat()
+        .map(it => it.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
+        .map(s => ({ id: s.resourceId.videoId, title: s.title, channel: s.videoOwnerChannelTitle || s.channelTitle || '', date: s.publishedAt || '' }))
+        .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
+        .forEach(v => { if (!seen.has(v.id) && out.length < 40) { seen.add(v.id); out.push(v); } });
+
+      if (!out.length) return showError('Could not find recent uploads from your subscriptions.', () => setView('trending'));
+      subsCache = out;
+      renderFeed(out);
+    } catch (e) {
+      if (e.message === 'auth' || !token) showSignIn();
+      else showError(e.message || 'Something went wrong loading your feed.', loadSubs);
+    }
+  }
+
+  // ——— Player + home controls ———
   document.getElementById('pback').addEventListener('click', e => { e.stopPropagation(); close(); });
   document.getElementById('home').addEventListener('click', e => e.stopPropagation());
 
   // ——— Glasses input (with desktop/touch fallbacks via shared/mrbd.js) ———
-  MRBD.on('swipe-up',    () => { if (mode === 'feed') select(sel - 1); });
-  MRBD.on('swipe-left',  () => { if (mode === 'feed') select(sel - 1); });
-  MRBD.on('swipe-down',  () => { if (mode === 'feed') select(sel + 1); });
-  MRBD.on('swipe-right', () => { if (mode === 'feed') select(sel + 1); });
-  MRBD.on('pinch',       () => { if (mode === 'feed') open(sel); });
-  MRBD.on('back',        () => { if (mode === 'player') close(); else location.href = '../../index.html'; });
+  MRBD.on('swipe-up',    () => { if (mode === 'feed' && !authVisible()) select(sel - 1); });
+  MRBD.on('swipe-left',  () => { if (mode === 'feed' && !authVisible()) select(sel - 1); });
+  MRBD.on('swipe-down',  () => { if (mode === 'feed' && !authVisible()) select(sel + 1); });
+  MRBD.on('swipe-right', () => { if (mode === 'feed' && !authVisible()) select(sel + 1); });
+  MRBD.on('pinch', () => {
+    if (authVisible()) { const b = authEl.querySelector('.btn'); if (b) b.click(); return; }
+    if (mode === 'feed') open(sel);
+  });
+  MRBD.on('back', () => {
+    if (mode === 'player') close();
+    else if (view === 'subs') setView('trending');
+    else location.href = '../../index.html';
+  });
 
-  select(0);
+  // init
+  renderFeed(shuffled(FEED));
 })();
 </script>
 </body>
