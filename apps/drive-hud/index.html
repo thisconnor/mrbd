@@ -64,6 +64,42 @@
     min-width: 110px;
   }
 
+  /* Estimated g-force meter (top center) */
+  .gmeter {
+    position:absolute; top: 30px; left: 50%;
+    transform: translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap: 8px;
+  }
+  .gdial {
+    width: 68px; height: 68px;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    position: relative;
+  }
+  .gdial::before, .gdial::after {
+    content:''; position:absolute; background: rgba(255,255,255,0.22);
+  }
+  .gdial::before { left:50%; top:9px; bottom:9px; width:1px; transform: translateX(-50%); }
+  .gdial::after  { top:50%; left:9px; right:9px; height:1px; transform: translateY(-50%); }
+  .gdot {
+    position:absolute; top:50%; left:50%;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background:#fff;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+    transition: transform 280ms ease, background 200ms ease;
+  }
+  .g-txt {
+    font-size: 24px; font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .g-unit { font-size: 15px; font-weight: 400; opacity: 0.7; margin-left: 3px; }
+  .gmeter.high .gdot { background: #ff4444; }
+  .gmeter.high .g-txt { color: #ff4444; }
+
   /* Speed limit sign */
   .limit {
     width: 132px; height: 168px;
@@ -230,6 +266,11 @@
       </div>
     </div>
 
+    <div class="gmeter" id="gmeter">
+      <div class="gdial"><div class="gdot" id="gdot"></div></div>
+      <div class="g-txt"><span id="gVal">0.0</span><span class="g-unit">g</span></div>
+    </div>
+
     <div class="speed-wrap">
       <div class="speed" id="speed">0</div>
       <div class="speed-unit">MPH</div>
@@ -261,8 +302,11 @@
     lastOSMt: 0,
     lastOSMLat: null, lastOSMLon: null,
     lastFixT: 0,
+    aLong: 0,            // m/s², smoothed longitudinal accel (+ = speeding up)
+    aLat: 0,             // m/s², smoothed lateral accel (+ = turning right)
   };
   let lastPos = null;
+  let accPrev = null;    // { t, speed, heading } for the g-force estimate
 
   // ——— DOM ———
   const $ = id => document.getElementById(id);
@@ -273,6 +317,7 @@
     rose: $('rose'), headingTxt: $('headingTxt'),
     next: $('next'), nextIcon: $('nextIcon'),
     nextDist: $('nextDist'), nextLabel: $('nextLabel'),
+    gmeter: $('gmeter'), gdot: $('gdot'), gVal: $('gVal'),
   };
 
   // ——— Math helpers ———
@@ -312,6 +357,7 @@
     speedInt: -1, limit: '_', headingTxt: '_', headingDeg: NaN,
     distTxt: '_', labelTxt: '_', iconTxt: '_',
     nextDim: null, limitState: '_', speedOver: null,
+    gTxt: '_', gx: NaN, gy: NaN, gHigh: null,
   };
   function scheduleRender() {
     if (pending) return;
@@ -366,6 +412,31 @@
         els.rose.style.transform = `rotate(${-rounded}deg)`;
         last.headingDeg = rounded;
       }
+    }
+
+    // Estimated g-force: magnitude in g + a direction dot (up = forward).
+    const G = 9.80665;
+    const gx = state.aLat / G;    // + = right
+    const gy = state.aLong / G;   // + = forward
+    const gMag = Math.hypot(gx, gy);
+    const gTxt = gMag.toFixed(1);
+    if (gTxt !== last.gTxt) {
+      els.gVal.textContent = gTxt;
+      last.gTxt = gTxt;
+    }
+    // Clamp the vector to the 1g circle; forward maps to "up" on the dial.
+    let vx = gx, vy = -gy;
+    const vmag = Math.hypot(vx, vy);
+    if (vmag > 1) { vx /= vmag; vy /= vmag; }
+    const dotX = Math.round(vx * 26), dotY = Math.round(vy * 26);
+    if (dotX !== last.gx || dotY !== last.gy) {
+      els.gdot.style.transform = `translate(calc(-50% + ${dotX}px), calc(-50% + ${dotY}px))`;
+      last.gx = dotX; last.gy = dotY;
+    }
+    const gHigh = gMag > 0.6;
+    if (gHigh !== last.gHigh) {
+      els.gmeter.classList.toggle('high', gHigh);
+      last.gHigh = gHigh;
     }
 
     // Next feature
@@ -429,6 +500,26 @@
     if (heading != null && !isNaN(heading) && state.speed > 1.5) {
       state.gpsHeading = heading;
     }
+
+    // Estimate g-forces (no real IMU): longitudinal from how fast speed
+    // changes; lateral from turn rate × speed (a_lat = v·dθ/dt).
+    const hNow = effectiveHeading();
+    if (accPrev && t > accPrev.t) {
+      const dt = (t - accPrev.t) / 1000;
+      if (dt > 0.05 && dt < 3) {
+        const aL = (state.speed - accPrev.speed) / dt;
+        let aLat = 0;
+        if (hNow != null && accPrev.heading != null) {
+          let dH = hNow - accPrev.heading;
+          while (dH > 180) dH -= 360;
+          while (dH < -180) dH += 360;
+          aLat = state.speed * (dH * Math.PI / 180) / dt;
+        }
+        state.aLong = state.aLong * 0.6 + aL * 0.4;
+        state.aLat = state.aLat * 0.6 + aLat * 0.4;
+      }
+    }
+    accPrev = { t, speed: state.speed, heading: hNow };
 
     lastPos = { lat: latitude, lon: longitude, t };
 
