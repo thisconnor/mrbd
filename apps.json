@@ -1,6 +1,12 @@
 {
   "apps": [
     {
+      "id": "drive-hud",
+      "name": "Drive HUD",
+      "description": "Live driving HUD: speed, posted limit, compass heading, and the next signal or stop ahead (GPS + OpenStreetMap).",
+      "path": "apps/drive-hud/"
+    },
+    {
       "id": "hello-hud",
       "name": "Hello HUD",
       "description": "Minimal heads-up display: a live clock and a greeting you cycle with a pinch.",

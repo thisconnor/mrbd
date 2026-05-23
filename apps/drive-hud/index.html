@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+<title>Drive HUD</title>
+<link rel="icon" href="data:,">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:600px; height:600px; overflow:hidden;
+    background:#000; color:#fff;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Helvetica Neue", system-ui, sans-serif;
+    font-weight: 200;
+    letter-spacing: -0.01em;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ——— Stage ——— */
+  .stage { position:relative; width:600px; height:600px; }
+
+  /* ——— Top bar: heading (left) + speed limit (right) ——— */
+  .top {
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding: 36px 44px 0 44px;
+  }
+
+  /* Compass */
+  .compass {
+    display:flex; align-items:center; gap:14px;
+  }
+  .rose {
+    width: 46px; height: 46px;
+    border: 1.25px solid #fff;
+    border-radius: 50%;
+    position: relative;
+    will-change: transform;
+  }
+  .rose::before {
+    content:'N';
+    position:absolute; top:-9px; left:50%;
+    transform: translateX(-50%);
+    font-size: 11px; font-weight: 500;
+    background:#000; padding: 0 4px;
+    letter-spacing: 0.05em;
+  }
+  .needle {
+    position:absolute; top:5px; left:50%;
+    width: 1.5px; height: 18px;
+    background:#fff;
+    transform: translateX(-50%);
+  }
+  .heading-txt {
+    font-size: 22px; font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    min-width: 78px;
+  }
+
+  /* Speed limit sign */
+  .limit {
+    width: 96px; height: 124px;
+    border: 2px solid #fff;
+    border-radius: 14px;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding: 8px 4px 6px;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .limit-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    line-height: 1.15;
+    text-align:center;
+    opacity: 0.95;
+  }
+  .limit-val {
+    font-size: 54px;
+    font-weight: 300;
+    line-height: 1;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    transition: color 200ms ease;
+  }
+  .limit.dim { border-color: rgba(255,255,255,0.25); }
+  .limit.dim .limit-label,
+  .limit.dim .limit-val { opacity: 0.35; }
+  .limit.over {
+    border-color: #ff4444;
+    box-shadow: 0 0 28px rgba(255, 68, 68, 0.45);
+  }
+  .limit.over .limit-val { color: #ff4444; }
+
+  /* ——— Center: speedometer ——— */
+  .speed-wrap {
+    position:absolute;
+    top:50%; left:50%;
+    transform: translate(-50%, -50%);
+    text-align:center;
+    line-height: 1;
+  }
+  .speed {
+    font-size: 200px;
+    font-weight: 100;
+    letter-spacing: -0.06em;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+  .speed-unit {
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.35em;
+    margin-top: 14px;
+    opacity: 0.85;
+    text-indent: 0.35em; /* optical centering with letter-spacing */
+  }
+  .speed.over { color: #ff4444; }
+
+  /* ——— Bottom: next feature ——— */
+  .next {
+    position:absolute;
+    left:50%; bottom: 50px;
+    transform: translateX(-50%);
+    display:flex; align-items:center; gap:18px;
+    padding: 14px 26px;
+    border: 1.25px solid rgba(255,255,255,0.55);
+    border-radius: 100px;
+    transition: border-color 200ms ease, opacity 200ms ease;
+  }
+  .next.dim {
+    border-color: rgba(255,255,255,0.18);
+    opacity: 0.55;
+  }
+  .next-icon {
+    font-size: 16px;
+    width: 18px; text-align:center;
+  }
+  .next-stack { display:flex; flex-direction:column; gap:2px; }
+  .next-distance {
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .next-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    line-height: 1;
+  }
+
+  /* ——— Permission gate ——— */
+  .gate {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap: 32px;
+    padding: 60px;
+    text-align:center;
+  }
+  .gate h1 {
+    font-size: 56px;
+    font-weight: 100;
+    letter-spacing: -0.03em;
+  }
+  .gate p {
+    font-size: 17px;
+    font-weight: 300;
+    opacity: 0.7;
+    line-height: 1.45;
+    max-width: 460px;
+  }
+  .gate button {
+    min-height: 88px;
+    min-width: 220px;
+    padding: 18px 44px;
+    font-size: 22px;
+    font-weight: 300;
+    font-family: inherit;
+    color: #fff;
+    background: transparent;
+    border: 1.5px solid #fff;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: background 150ms ease, box-shadow 150ms ease;
+    letter-spacing: 0.02em;
+  }
+  .gate button:focus,
+  .gate button:hover {
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 28px rgba(255,255,255,0.25);
+  }
+  .gate.error h1 { font-size: 36px; }
+  .gate.error p { color: #ff8a8a; opacity: 1; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- Permission gate -->
+  <div class="gate" id="gate">
+    <h1>Drive HUD</h1>
+    <p>Live speed, posted limit, heading, and the next signal or stop ahead. Needs location and motion access.</p>
+    <button id="startBtn">Start</button>
+  </div>
+
+  <!-- Main HUD -->
+  <div class="hud hidden" id="hud">
+    <div class="top">
+      <div class="compass">
+        <div class="rose" id="rose"><div class="needle"></div></div>
+        <div class="heading-txt" id="headingTxt">—</div>
+      </div>
+      <div class="limit dim" id="limit">
+        <div class="limit-label">SPEED<br>LIMIT</div>
+        <div class="limit-val" id="limitVal">—</div>
+      </div>
+    </div>
+
+    <div class="speed-wrap">
+      <div class="speed" id="speed">0</div>
+      <div class="speed-unit">MPH</div>
+    </div>
+
+    <div class="next dim" id="next">
+      <div class="next-icon" id="nextIcon">◇</div>
+      <div class="next-stack">
+        <div class="next-distance" id="nextDist">—</div>
+        <div class="next-label" id="nextLabel">scanning</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ——— State ———
+  const state = {
+    lat: null, lon: null,
+    speed: 0,            // m/s, smoothed
+    rawSpeed: 0,         // m/s, latest
+    gpsHeading: null,    // degrees from true north, GPS-derived
+    devHeading: null,    // degrees from true north, device-orientation-derived
+    speedLimit: null,    // mph
+    nextFeature: null,   // {distance(m), label, icon}
+    lastOSMt: 0,
+    lastOSMLat: null, lastOSMLon: null,
+    lastFixT: 0,
+  };
+  let lastPos = null;
+
+  // ——— DOM ———
+  const $ = id => document.getElementById(id);
+  const els = {
+    gate: $('gate'), hud: $('hud'), startBtn: $('startBtn'),
+    speed: $('speed'),
+    limit: $('limit'), limitVal: $('limitVal'),
+    rose: $('rose'), headingTxt: $('headingTxt'),
+    next: $('next'), nextIcon: $('nextIcon'),
+    nextDist: $('nextDist'), nextLabel: $('nextLabel'),
+  };
+
+  // ——— Math helpers ———
+  const MS_TO_MPH = 2.2369362921;
+  const M_TO_FT = 3.2808399;
+  const FT_PER_MI = 5280;
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+    const dφ = (lat2 - lat1) * Math.PI/180;
+    const dλ = (lon2 - lon1) * Math.PI/180;
+    const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function bearing(lat1, lon1, lat2, lon2) {
+    const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+    const dλ = (lon2 - lon1) * Math.PI/180;
+    const y = Math.sin(dλ) * Math.cos(φ2);
+    const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(dλ);
+    return ((Math.atan2(y, x) * 180/Math.PI) + 360) % 360;
+  }
+  function cardinal(deg) {
+    const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+    return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+  }
+  function effectiveHeading() {
+    // Prefer GPS heading when moving fast enough to be reliable.
+    if (state.gpsHeading != null && state.speed > 1.5) return state.gpsHeading;
+    if (state.devHeading != null) return state.devHeading;
+    return state.gpsHeading; // null when truly nothing
+  }
+
+  // ——— Render (rAF batched, value-gated) ———
+  let pending = false;
+  const last = {
+    speedInt: -1, limit: '_', headingTxt: '_', headingDeg: NaN,
+    distTxt: '_', labelTxt: '_', iconTxt: '_',
+    nextDim: null, limitState: '_', speedOver: null,
+  };
+  function scheduleRender() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(render);
+  }
+  function render() {
+    pending = false;
+
+    // Speed (integer mph)
+    const mph = Math.max(0, Math.round(state.speed * MS_TO_MPH));
+    if (mph !== last.speedInt) {
+      els.speed.textContent = mph;
+      last.speedInt = mph;
+    }
+    // Speed over limit highlight
+    const over = state.speedLimit != null && mph > state.speedLimit + 4;
+    if (over !== last.speedOver) {
+      els.speed.classList.toggle('over', over);
+      last.speedOver = over;
+    }
+
+    // Limit
+    let limitState;
+    if (state.speedLimit == null) limitState = 'dim';
+    else if (over) limitState = 'over';
+    else limitState = 'on';
+    if (limitState !== last.limitState) {
+      els.limit.classList.toggle('dim', limitState === 'dim');
+      els.limit.classList.toggle('over', limitState === 'over');
+      last.limitState = limitState;
+    }
+    const limitTxt = state.speedLimit == null ? '—' : String(state.speedLimit);
+    if (limitTxt !== last.limit) {
+      els.limitVal.textContent = limitTxt;
+      last.limit = limitTxt;
+    }
+
+    // Heading
+    const h = effectiveHeading();
+    if (h != null) {
+      const txt = `${cardinal(h)} ${Math.round(h)}°`;
+      if (txt !== last.headingTxt) {
+        els.headingTxt.textContent = txt;
+        last.headingTxt = txt;
+      }
+      // Rotate the rose so N always points to true north in the world.
+      // The rose is fixed in the user's view; N on the dial moves to the
+      // user's left as they turn right (clockwise heading increases).
+      const rounded = Math.round(h);
+      if (rounded !== last.headingDeg) {
+        els.rose.style.transform = `rotate(${-rounded}deg)`;
+        last.headingDeg = rounded;
+      }
+    }
+
+    // Next feature
+    const nf = state.nextFeature;
+    if (nf) {
+      const ft = nf.distance * M_TO_FT;
+      const distTxt = ft >= 1000
+        ? (ft / FT_PER_MI).toFixed(1) + ' mi'
+        : Math.round(ft / 10) * 10 + ' ft';
+      if (distTxt !== last.distTxt) {
+        els.nextDist.textContent = distTxt;
+        last.distTxt = distTxt;
+      }
+      if (nf.label !== last.labelTxt) {
+        els.nextLabel.textContent = nf.label;
+        last.labelTxt = nf.label;
+      }
+      if (nf.icon !== last.iconTxt) {
+        els.nextIcon.textContent = nf.icon;
+        last.iconTxt = nf.icon;
+      }
+      if (last.nextDim !== false) {
+        els.next.classList.remove('dim');
+        last.nextDim = false;
+      }
+    } else {
+      if (last.distTxt !== '—') { els.nextDist.textContent = '—'; last.distTxt = '—'; }
+      if (last.labelTxt !== 'scanning') { els.nextLabel.textContent = 'scanning'; last.labelTxt = 'scanning'; }
+      if (last.iconTxt !== '◇') { els.nextIcon.textContent = '◇'; last.iconTxt = '◇'; }
+      if (last.nextDim !== true) {
+        els.next.classList.add('dim');
+        last.nextDim = true;
+      }
+    }
+  }
+
+  // ——— Geolocation ———
+  function onPosition(pos) {
+    const t = pos.timestamp || Date.now();
+    const { latitude, longitude, speed, heading } = pos.coords;
+
+    state.lat = latitude;
+    state.lon = longitude;
+    state.lastFixT = t;
+
+    // Speed: prefer GPS-reported, else compute from last position
+    let newSpeed;
+    if (speed != null && !isNaN(speed) && speed >= 0) {
+      newSpeed = speed;
+    } else if (lastPos) {
+      const dt = (t - lastPos.t) / 1000;
+      const d = haversine(lastPos.lat, lastPos.lon, latitude, longitude);
+      newSpeed = dt > 0 ? d / dt : state.speed;
+    } else {
+      newSpeed = 0;
+    }
+    state.rawSpeed = newSpeed;
+    // Light EMA smoothing so the big number doesn't jitter
+    state.speed = state.speed * 0.55 + newSpeed * 0.45;
+
+    if (heading != null && !isNaN(heading) && state.speed > 1.5) {
+      state.gpsHeading = heading;
+    }
+
+    lastPos = { lat: latitude, lon: longitude, t };
+
+    scheduleRender();
+    maybeQueryOSM();
+  }
+  function onPositionError(err) {
+    console.warn('Geolocation error:', err.code, err.message);
+    if (err.code === 1) {
+      showError('Location permission denied. Enable it in glasses settings, then restart.');
+    } else if (err.code === 2) {
+      showError('Location unavailable. Check that your phone has GPS signal.');
+    }
+  }
+
+  // ——— Device orientation (compass when stationary) ———
+  function onOrientation(e) {
+    // iOS Safari provides webkitCompassHeading (0 = north, clockwise).
+    // On other runtimes (likely MRBD), use alpha. Note alpha is counter-
+    // clockwise from north, so we convert: compass = 360 - alpha.
+    let h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+      h = e.webkitCompassHeading;
+    } else if (typeof e.alpha === 'number' && !isNaN(e.alpha)) {
+      h = (360 - e.alpha) % 360;
+    }
+    if (h == null) return;
+    state.devHeading = h;
+    // Only push to render if we're using device heading (i.e., stationary)
+    if (!(state.gpsHeading != null && state.speed > 1.5)) {
+      scheduleRender();
+    }
+  }
+
+  // ——— OSM Overpass: speed limit + nearest signal/stop ahead ———
+  const OVERPASS = 'https://overpass-api.de/api/interpreter';
+
+  async function maybeQueryOSM() {
+    if (state.lat == null) return;
+    const now = Date.now();
+    const moved = state.lastOSMLat == null ? Infinity
+      : haversine(state.lat, state.lon, state.lastOSMLat, state.lastOSMLon);
+    // Throttle: refresh every 8s or after 25m of movement
+    if (now - state.lastOSMt < 8000 && moved < 25) return;
+
+    state.lastOSMt = now;
+    state.lastOSMLat = state.lat;
+    state.lastOSMLon = state.lon;
+
+    const radius = 600;
+    // Two-part query: nearest road segment with maxspeed; signals/stops nearby
+    const q =
+      `[out:json][timeout:6];
+       (
+         way(around:25,${state.lat},${state.lon})["highway"]["maxspeed"];
+         node(around:${radius},${state.lat},${state.lon})["highway"~"^(traffic_signals|stop)$"];
+       );
+       out tags center;`;
+
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 7000);
+      const r = await fetch(OVERPASS, {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(q),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(to);
+      if (!r.ok) return;
+      const data = await r.json();
+      processOSM(data);
+    } catch (e) {
+      // Network blip or rate-limit; silently keep going
+      console.warn('Overpass failed:', e.message || e);
+    }
+  }
+
+  function parseMaxspeed(raw) {
+    if (!raw) return null;
+    // Handles: "35", "35 mph", "50 km/h", "signals", "none"
+    const m = String(raw).match(/(\d+)\s*(mph|km\/h)?/i);
+    if (!m) return null;
+    const v = parseInt(m[1], 10);
+    const unit = (m[2] || '').toLowerCase();
+    if (unit === 'km/h') return Math.round(v * 0.621371);
+    // Default assumption in US OSM data is mph if unitless on a US road,
+    // but globally OSM defaults to km/h. We assume mph (US driving HUD).
+    return v;
+  }
+
+  function processOSM(data) {
+    // Speed limit: any way with maxspeed within snap radius
+    let limit = null;
+    for (const el of data.elements) {
+      if (el.type === 'way' && el.tags && el.tags.maxspeed) {
+        const v = parseMaxspeed(el.tags.maxspeed);
+        if (v != null) { limit = v; break; }
+      }
+    }
+    state.speedLimit = limit;
+
+    // Next signal/stop ahead
+    const heading = effectiveHeading();
+    let best = null;
+    for (const el of data.elements) {
+      if (el.type !== 'node' || !el.tags || !el.tags.highway) continue;
+      const type = el.tags.highway;
+      if (type !== 'traffic_signals' && type !== 'stop') continue;
+      const d = haversine(state.lat, state.lon, el.lat, el.lon);
+
+      // Filter: ahead of user (within ±70° of heading) when we have one
+      if (heading != null) {
+        const b = bearing(state.lat, state.lon, el.lat, el.lon);
+        let diff = Math.abs(((b - heading + 540) % 360) - 180);
+        if (diff > 70) continue;
+      }
+      if (d < (best?.distance ?? Infinity)) {
+        best = {
+          distance: d,
+          label: type === 'traffic_signals' ? 'signal' : 'stop',
+          icon: type === 'traffic_signals' ? '●' : '◆',
+        };
+      }
+    }
+    state.nextFeature = best;
+
+    scheduleRender();
+  }
+
+  // ——— Error display ———
+  function showError(msg) {
+    els.hud.classList.add('hidden');
+    els.gate.classList.remove('hidden');
+    els.gate.classList.add('error');
+    els.gate.querySelector('h1').textContent = 'Can’t start';
+    els.gate.querySelector('p').textContent = msg;
+    els.startBtn.textContent = 'Retry';
+    els.startBtn.focus();
+  }
+
+  // ——— Start ———
+  let watchId = null;
+  async function start() {
+    els.gate.classList.add('hidden');
+    els.gate.classList.remove('error');
+    els.hud.classList.remove('hidden');
+
+    // Orientation permission (iOS Safari path; MRBD typically auto-grants)
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') {
+          window.addEventListener('deviceorientation', onOrientation);
+        }
+      } else if (typeof DeviceOrientationEvent !== 'undefined') {
+        window.addEventListener('deviceorientation', onOrientation);
+      }
+    } catch (e) { /* keep going without compass */ }
+
+    // Geolocation
+    if (!('geolocation' in navigator)) {
+      showError('This device does not expose geolocation to web apps.');
+      return;
+    }
+    if (watchId != null) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition(
+      onPosition,
+      onPositionError,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 1000 }
+    );
+
+    scheduleRender();
+  }
+
+  // ——— D-pad input (Start button is the only focusable target pre-start) ———
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (!els.gate.classList.contains('hidden')) {
+        e.preventDefault();
+        start();
+      }
+    } else if (e.key === 'Escape') {
+      // No-op on glasses (no back nav), but harmless
+    }
+  });
+
+  els.startBtn.addEventListener('click', start);
+  window.addEventListener('load', () => els.startBtn.focus());
+
+  // Re-render every 500ms while running so distance counts down smoothly
+  // even between GPS fixes. Cheap because render() short-circuits on
+  // unchanged values.
+  setInterval(() => {
+    if (!els.hud.classList.contains('hidden') && state.nextFeature && state.lat != null) {
+      // Reproject distance from current position; cheaper than re-querying OSM
+      scheduleRender();
+    }
+  }, 500);
+})();
+</script>
+</body>
+</html>
