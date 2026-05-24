@@ -240,8 +240,8 @@
   .gate.error h1 { font-size: 36px; }
   .gate.error p { color: #ff8a8a; opacity: 1; }
 
-  /* ——— Low-key menu button + menu ——— */
-  .menu-btn {
+  /* ——— Low-key search button ——— */
+  .search-btn {
     position:absolute; right: 28px; bottom: 30px;
     width: 54px; height: 54px;
     display:flex; align-items:center; justify-content:center;
@@ -249,27 +249,13 @@
     border: 1.5px solid rgba(255,255,255,0.45);
     border-radius: 50%;
     opacity: 0.55; cursor: pointer;
-    transition: opacity 150ms ease, background 150ms ease;
+    transition: opacity 150ms ease, background 150ms ease, box-shadow 150ms ease;
     z-index: 30;
   }
-  .menu-btn:hover, .menu-btn:focus { opacity: 1; background: rgba(255,255,255,0.1); outline:none; }
-  .menu {
-    position:absolute; right: 28px; bottom: 94px;
-    display:flex; flex-direction:column;
-    background:#0a0a0a;
-    border: 1.5px solid rgba(255,255,255,0.4);
-    border-radius: 16px; overflow:hidden;
-    z-index: 31; min-width: 248px;
+  .search-btn:hover, .search-btn:focus {
+    opacity: 1; background: rgba(255,255,255,0.12);
+    box-shadow: 0 0 0 2px #fff; outline:none;
   }
-  .menu-item {
-    appearance:none; text-align:left;
-    font:inherit; font-size: 20px; font-weight: 300; color:#fff;
-    background: transparent; border:0;
-    padding: 16px 22px; cursor:pointer;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .menu-item:last-child { border-bottom: 0; }
-  .menu-item:hover, .menu-item:focus { background: rgba(255,255,255,0.08); outline:none; }
 
   /* ——— Search overlay ——— */
   .search {
@@ -297,6 +283,16 @@
   .sr-title { font-size: 21px; font-weight: 400; }
   .sr-sub { font-size: 15px; opacity: 0.6; margin-top: 4px; }
   .sr-note { padding: 20px 6px; font-size: 17px; opacity: 0.6; }
+  .sr-item.focusable:focus { outline:none; background: rgba(255,255,255,0.12); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.65); }
+  #searchClose:focus { outline:none; background: rgba(255,255,255,0.12); box-shadow: 0 0 0 2px #fff; }
+  .search-hint { margin-top: 12px; font-size: 14px; color:#888; line-height: 1.4; }
+  .navstop {
+    appearance:none; margin-top: 16px; align-self:flex-start;
+    font:inherit; font-size: 17px; font-weight: 400; color:#fff;
+    background: transparent; border: 1.5px solid #ff4444; border-radius: 100px;
+    padding: 10px 22px; cursor:pointer;
+  }
+  .navstop:hover, .navstop:focus { outline:none; background: rgba(255,68,68,0.18); box-shadow: 0 0 0 2px #ff4444; }
 
   /* ——— Turn-by-turn banner + ETA ——— */
   .navbar {
@@ -393,27 +389,21 @@
     <!-- ETA strip (navigation mode) -->
     <div class="eta hidden" id="eta"><span id="etaText">—</span></div>
 
-    <!-- Low-key menu button -->
-    <button class="menu-btn" id="menuBtn" aria-label="Search and menu">
+    <!-- Low-key search button -->
+    <button class="search-btn focusable" id="searchBtn" aria-label="Search destination">
       <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
       </svg>
     </button>
 
-    <!-- Menu panel -->
-    <div class="menu hidden" id="menu">
-      <button class="menu-item" id="miSearch">Search destination</button>
-      <button class="menu-item hidden" id="miStop">End navigation</button>
-      <button class="menu-item" id="miRestart">Restart GPS</button>
-      <button class="menu-item" id="miPerms">Location permission</button>
-    </div>
-
     <!-- Search overlay -->
     <div class="search hidden" id="search">
       <div class="search-bar">
-        <input id="searchInput" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search address or place">
-        <button id="searchClose" aria-label="Close">✕</button>
+        <input id="searchInput" class="focusable" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Search address or place">
+        <button id="searchClose" class="focusable" aria-label="Close">✕</button>
       </div>
+      <div class="search-hint">Write with your Neural Band to type, or use a paired keyboard. Arrow keys move; select to choose.</div>
+      <button class="navstop focusable hidden" id="navStop">End navigation</button>
       <div class="search-results" id="searchResults"></div>
     </div>
 
@@ -457,9 +447,9 @@
     next: $('next'), nextIcon: $('nextIcon'),
     nextDist: $('nextDist'), nextLabel: $('nextLabel'),
     gmeter: $('gmeter'), gdot: $('gdot'), gVal: $('gVal'),
-    menuBtn: $('menuBtn'), menu: $('menu'),
-    miSearch: $('miSearch'), miStop: $('miStop'), miRestart: $('miRestart'), miPerms: $('miPerms'),
+    searchBtn: $('searchBtn'),
     search: $('search'), searchInput: $('searchInput'), searchClose: $('searchClose'), searchResults: $('searchResults'),
+    navStop: $('navStop'),
     navbar: $('navbar'), navArrow: $('navArrow'), navDist: $('navDist'), navInstr: $('navInstr'),
     eta: $('eta'), etaText: $('etaText'), toast: $('toast'),
   };
@@ -849,21 +839,42 @@
     toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 2500);
   }
 
-  function openMenu(show) {
-    const open = show == null ? els.menu.classList.contains('hidden') : show;
-    els.menu.classList.toggle('hidden', !open);
-    els.miStop.classList.toggle('hidden', !state.nav);
-  }
   function openSearch() {
-    openMenu(false);
     els.search.classList.remove('hidden');
     els.searchInput.value = '';
     els.searchResults.innerHTML = '';
-    setTimeout(() => els.searchInput.focus(), 60);
+    els.navStop.classList.toggle('hidden', !state.nav);
+    // Reveal the field, then focus it synchronously within the activating
+    // gesture so the glasses' text entry (Neural Handwriting) engages. The
+    // forced reflow makes the now-visible input focusable right away.
+    void els.search.offsetHeight;
+    els.searchInput.focus();
   }
   function closeSearch() {
     els.search.classList.add('hidden');
     els.searchInput.blur();
+    els.searchBtn.focus();
+  }
+  function endNavFromSearch() { stopNav(); closeSearch(); }
+
+  // ——— D-pad focus management (MRBD maps Neural Band gestures to arrow keys) ———
+  function focusList() {
+    if (!els.search.classList.contains('hidden')) {
+      const items = [els.searchInput];
+      if (!els.navStop.classList.contains('hidden')) items.push(els.navStop);
+      els.searchResults.querySelectorAll('.sr-item').forEach(el => items.push(el));
+      items.push(els.searchClose);
+      return items;
+    }
+    if (!els.gate.classList.contains('hidden')) return [els.startBtn];
+    return [els.searchBtn];
+  }
+  function moveFocus(dir) {
+    const list = focusList();
+    if (!list.length) return;
+    let i = list.indexOf(document.activeElement);
+    i = i < 0 ? 0 : Math.max(0, Math.min(list.length - 1, i + dir));
+    list[i].focus();
   }
 
   async function runSearch(q) {
@@ -894,7 +905,8 @@
     data.forEach(item => {
       const parts = (item.display_name || 'Unknown').split(', ');
       const div = document.createElement('div');
-      div.className = 'sr-item';
+      div.className = 'sr-item focusable';
+      div.tabIndex = -1;
       div.innerHTML = `<div class="sr-title">${escapeHtml(parts[0])}</div>` +
         `<div class="sr-sub">${escapeHtml(parts.slice(1, 4).join(', '))}</div>`;
       div.addEventListener('click', () => {
@@ -1089,44 +1101,40 @@
     scheduleRender();
   }
 
-  // ——— D-pad input (Start button is the only focusable target pre-start) ———
+  // ——— D-pad input: arrow keys move focus, Enter selects, Esc closes ———
   document.addEventListener('keydown', e => {
+    const inInput = document.activeElement === els.searchInput;
     if (e.key === 'Enter') {
-      if (!els.gate.classList.contains('hidden')) {
+      if (!els.gate.classList.contains('hidden')) { e.preventDefault(); start(); return; }
+      const el = document.activeElement;
+      if (el && !inInput && (el.classList.contains('focusable') || el.classList.contains('sr-item'))) {
         e.preventDefault();
-        start();
+        el.click();
       }
+    } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && !inInput)) {
+      e.preventDefault(); moveFocus(1);
+    } else if (e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && !inInput)) {
+      e.preventDefault(); moveFocus(-1);
     } else if (e.key === 'Escape') {
       if (!els.search.classList.contains('hidden')) closeSearch();
-      else if (!els.menu.classList.contains('hidden')) openMenu(false);
     }
   });
 
   els.startBtn.addEventListener('click', start);
   window.addEventListener('load', () => els.startBtn.focus());
 
-  // ——— Menu + search wiring ———
-  els.menuBtn.addEventListener('click', e => { e.stopPropagation(); openMenu(); });
-  els.miSearch.addEventListener('click', e => { e.stopPropagation(); openSearch(); });
-  els.miStop.addEventListener('click', e => { e.stopPropagation(); stopNav(); openMenu(false); });
-  els.miRestart.addEventListener('click', e => { e.stopPropagation(); openMenu(false); start(); });
-  els.miPerms.addEventListener('click', e => { e.stopPropagation(); openMenu(false); start(); });
+  // ——— Search wiring ———
+  els.searchBtn.addEventListener('click', e => { e.stopPropagation(); openSearch(); });
   els.searchClose.addEventListener('click', e => { e.stopPropagation(); closeSearch(); });
+  els.navStop.addEventListener('click', e => { e.stopPropagation(); endNavFromSearch(); });
   els.searchInput.addEventListener('input', () => {
     clearTimeout(searchTimer);
     const q = els.searchInput.value;
     searchTimer = setTimeout(() => runSearch(q), 500);
   });
   els.searchInput.addEventListener('keydown', e => {
-    e.stopPropagation();
+    // Enter runs the search; let arrow keys bubble to the D-pad handler.
     if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); runSearch(els.searchInput.value); }
-  });
-  // Tap outside the menu closes it.
-  document.addEventListener('click', e => {
-    if (!els.menu.classList.contains('hidden') &&
-        !els.menu.contains(e.target) && !els.menuBtn.contains(e.target)) {
-      openMenu(false);
-    }
   });
 
   // Re-render every 500ms while running so distance counts down smoothly
