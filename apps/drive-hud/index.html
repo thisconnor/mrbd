@@ -21,84 +21,26 @@
     -webkit-user-select: none;
   }
 
-  /* ——— Stage ——— */
   .stage { position:relative; width:600px; height:600px; }
+  .hidden { display: none !important; }
 
-  /* ——— Top bar: heading (left) + speed limit (right) ——— */
+  /* ——— Top bar: cardinal (left) + speed limit (right) ——— */
   .top {
     position:absolute; top:0; left:0; right:0;
     display:flex; justify-content:space-between; align-items:flex-start;
-    padding: 28px 36px 0 36px;
+    padding: 36px 40px 0 44px;
   }
-
-  /* Compass */
-  .compass {
-    display:flex; align-items:center; gap:18px;
-    padding-top: 10px;
-  }
-  .rose {
-    width: 68px; height: 68px;
-    border: 1.5px solid #fff;
-    border-radius: 50%;
-    position: relative;
-    will-change: transform;
-  }
-  .rose::before {
-    content:'N';
-    position:absolute; top:-12px; left:50%;
-    transform: translateX(-50%);
-    font-size: 15px; font-weight: 500;
-    background:#000; padding: 0 5px;
-    letter-spacing: 0.05em;
-  }
-  .needle {
-    position:absolute; top:7px; left:50%;
-    width: 2px; height: 26px;
-    background:#fff;
-    transform: translateX(-50%);
-  }
-  .heading-txt {
-    font-size: 30px; font-weight: 300;
+  .cardinal {
+    font-size: 44px;
+    font-weight: 200;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
-    min-width: 110px;
-  }
-
-  /* Estimated g-force meter (top center) */
-  .gmeter {
-    position:absolute; top: 30px; left: 50%;
-    transform: translateX(-50%);
-    display:flex; flex-direction:column; align-items:center; gap: 8px;
-  }
-  .gdial {
-    width: 68px; height: 68px;
-    border: 1.5px solid #fff;
-    border-radius: 50%;
-    position: relative;
-  }
-  .gdial::before, .gdial::after {
-    content:''; position:absolute; background: rgba(255,255,255,0.22);
-  }
-  .gdial::before { left:50%; top:9px; bottom:9px; width:1px; transform: translateX(-50%); }
-  .gdial::after  { top:50%; left:9px; right:9px; height:1px; transform: translateY(-50%); }
-  .gdot {
-    position:absolute; top:50%; left:50%;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background:#fff;
-    transform: translate(-50%, -50%);
-    will-change: transform;
-    transition: transform 280ms ease, background 200ms ease;
-  }
-  .g-txt {
-    font-size: 24px; font-weight: 300;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
     line-height: 1;
+    margin-top: 18px;
+    min-width: 80px;
   }
-  .g-unit { font-size: 15px; font-weight: 400; opacity: 0.7; margin-left: 3px; }
-  .gmeter.high .gdot { background: #ff4444; }
-  .gmeter.high .g-txt { color: #ff4444; }
+  .cardinal.dim { opacity: 0.35; }
 
   /* Speed limit sign */
   .limit {
@@ -156,44 +98,257 @@
     letter-spacing: 0.35em;
     margin-top: 18px;
     opacity: 0.85;
-    text-indent: 0.35em; /* optical centering with letter-spacing */
+    text-indent: 0.35em;
   }
   .speed.over { color: #ff4444; }
 
-  /* ——— Bottom: next feature ——— */
-  .next {
+  /* ——— Bottom area ——— */
+  .bottom {
     position:absolute;
-    left:50%; bottom: 38px;
-    transform: translateX(-50%);
-    display:flex; align-items:center; gap:24px;
-    padding: 20px 38px;
-    border: 1.5px solid rgba(255,255,255,0.55);
-    border-radius: 100px;
-    transition: border-color 200ms ease, opacity 200ms ease;
+    left:40px; right:40px; bottom: 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 18px;
   }
-  .next.dim {
-    border-color: rgba(255,255,255,0.18);
-    opacity: 0.55;
+  .bottom.idle { justify-content: center; }
+
+  /* Maneuver card (navigation mode) */
+  .maneuver {
+    flex: 1;
+    display:flex; align-items:center; gap:22px;
+    padding: 18px 26px;
+    border: 1.5px solid rgba(255,255,255,0.65);
+    border-radius: 22px;
+    background: transparent;
+    min-height: 96px;
+    max-width: 420px;
   }
-  .next-icon {
-    font-size: 22px;
-    width: 24px; text-align:center;
+  .maneuver-icon {
+    font-size: 56px;
+    font-weight: 300;
+    line-height: 1;
+    width: 60px;
+    text-align: center;
+    flex-shrink: 0;
   }
-  .next-stack { display:flex; flex-direction:column; gap:4px; }
-  .next-distance {
-    font-size: 36px;
+  .maneuver-stack {
+    display:flex; flex-direction:column; gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+  .maneuver-dist {
+    font-size: 38px;
     font-weight: 300;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
-  .next-label {
+  .maneuver-street {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.2;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Search / End buttons (icon-only, low-key) */
+  .icon-btn {
+    width: 64px; height: 64px;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    background: transparent;
+    color: #fff;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .icon-btn:focus, .icon-btn:hover {
+    outline: none;
+    opacity: 1;
+    border-color: #fff;
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 20px rgba(255,255,255,0.18);
+  }
+  .icon-btn svg {
+    width: 26px; height: 26px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ——— Full-screen overlays (search / results) ——— */
+  .overlay {
+    position:absolute; inset:0;
+    background:#000;
+    padding: 30px 36px 28px;
+    display:flex; flex-direction:column;
+    z-index: 10;
+  }
+
+  /* Search input display */
+  .search-header {
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .search-input {
+    flex: 1;
+    font-size: 32px;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    padding: 10px 0;
+    border-bottom: 1.5px solid rgba(255,255,255,0.35);
+    min-height: 56px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+  .search-input.empty { opacity: 0.3; }
+  .caret {
+    display: inline-block;
+    width: 2px;
+    background: #fff;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    height: 1em;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .small-btn {
+    width: 48px; height: 48px;
+    border: 1.25px solid rgba(255,255,255,0.4);
+    background: transparent;
+    color: #fff;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition: background 100ms, border-color 100ms;
+    flex-shrink:0;
+    padding:0;
+  }
+  .small-btn:focus {
+    outline:none;
+    background:#fff; color:#000;
+    border-color:#fff;
+  }
+  .small-btn svg { width: 18px; height: 18px; stroke: currentColor; fill:none; stroke-width:2; stroke-linecap:round; }
+
+  /* Keyboard */
+  .keyboard {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 5px;
+    flex: 1;
+    min-height: 0;
+  }
+  .key {
+    border: 1.25px solid rgba(255,255,255,0.4);
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 300;
+    border-radius: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 80ms, border-color 80ms, color 80ms;
+    padding: 0;
+  }
+  .key:focus {
+    outline: none;
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+  .key.span-4 { grid-column: span 4; }
+  .key.span-2 { grid-column: span 2; }
+  .key.action {
+    font-size: 19px;
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.06);
+  }
+  .key.go { background: rgba(255,255,255,0.14); }
+  .key.go:focus { background: #fff; color: #000; }
+
+  /* Results */
+  .results-header {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; margin-bottom: 14px;
+  }
+  .results-title {
     font-size: 14px;
+    font-weight: 500;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    opacity: 0.65;
-    line-height: 1;
+    opacity: 0.55;
   }
+  .results-list {
+    flex: 1;
+    display:flex; flex-direction:column;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .result-item {
+    min-height: 92px;
+    border: 1.25px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    border-radius: 16px;
+    padding: 14px 22px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    transition: background 120ms, border-color 120ms;
+  }
+  .result-item:focus {
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    border-color: #fff;
+    box-shadow: 0 0 18px rgba(255,255,255,0.12);
+  }
+  .result-name {
+    font-size: 21px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .result-addr {
+    font-size: 14px;
+    opacity: 0.6;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status {
+    flex: 1;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center;
+    padding: 40px;
+    gap: 16px;
+  }
+  .status-title { font-size: 28px; font-weight: 300; letter-spacing: -0.01em; }
+  .status-sub { font-size: 15px; opacity: 0.6; line-height: 1.4; max-width: 420px; }
 
   /* ——— Permission gate ——— */
   .gate {
@@ -203,6 +358,7 @@
     gap: 32px;
     padding: 60px;
     text-align:center;
+    z-index: 20;
   }
   .gate h1 {
     font-size: 56px;
@@ -231,109 +387,13 @@
     transition: background 150ms ease, box-shadow 150ms ease;
     letter-spacing: 0.02em;
   }
-  .gate button:focus,
-  .gate button:hover {
+  .gate button:focus, .gate button:hover {
     outline: none;
     background: rgba(255,255,255,0.08);
     box-shadow: 0 0 28px rgba(255,255,255,0.25);
   }
   .gate.error h1 { font-size: 36px; }
   .gate.error p { color: #ff8a8a; opacity: 1; }
-
-  /* ——— Low-key search button ——— */
-  .search-btn {
-    position:absolute; right: 28px; bottom: 30px;
-    width: 54px; height: 54px;
-    display:flex; align-items:center; justify-content:center;
-    color:#fff; background: rgba(0,0,0,0.35);
-    border: 1.5px solid rgba(255,255,255,0.45);
-    border-radius: 50%;
-    opacity: 0.55; cursor: pointer;
-    transition: opacity 150ms ease, background 150ms ease, box-shadow 150ms ease;
-    z-index: 30;
-  }
-  .search-btn:hover, .search-btn:focus {
-    opacity: 1; background: rgba(255,255,255,0.12);
-    box-shadow: 0 0 0 2px #fff; outline:none;
-  }
-
-  /* ——— Search overlay ——— */
-  .search {
-    position:absolute; inset:0; z-index: 40;
-    background:#000; display:flex; flex-direction:column;
-    padding: 28px 30px 0;
-  }
-  .search-bar { display:flex; align-items:center; gap: 14px; }
-  #searchInput {
-    flex:1; min-width:0; font:inherit; font-size: 24px; font-weight: 300; color:#fff;
-    background:#141414; border: 1.5px solid #444; border-radius: 14px; padding: 16px 18px;
-  }
-  #searchInput:focus { outline:none; border-color:#fff; }
-  #searchInput::placeholder { color:#777; }
-  #searchClose {
-    flex:0 0 auto; width: 54px; height: 54px;
-    font:inherit; font-size: 22px; color:#fff;
-    background:transparent; border:1.5px solid #444; border-radius: 50%; cursor:pointer;
-  }
-  #searchClose:hover { background: rgba(255,255,255,0.08); }
-  .search-results { margin-top: 18px; overflow-y:auto; scrollbar-width:none; }
-  .search-results::-webkit-scrollbar { display:none; }
-  .sr-item { padding: 16px 6px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor:pointer; }
-  .sr-item:hover { background: rgba(255,255,255,0.05); }
-  .sr-title { font-size: 21px; font-weight: 400; }
-  .sr-sub { font-size: 15px; opacity: 0.6; margin-top: 4px; }
-  .sr-note { padding: 20px 6px; font-size: 17px; opacity: 0.6; }
-  .sr-item.focusable:focus { outline:none; background: rgba(255,255,255,0.12); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.65); }
-  #searchClose:focus { outline:none; background: rgba(255,255,255,0.12); box-shadow: 0 0 0 2px #fff; }
-  .search-hint { margin-top: 12px; font-size: 14px; color:#888; line-height: 1.4; }
-  .navstop {
-    appearance:none; margin-top: 16px; align-self:flex-start;
-    font:inherit; font-size: 17px; font-weight: 400; color:#fff;
-    background: transparent; border: 1.5px solid #ff4444; border-radius: 100px;
-    padding: 10px 22px; cursor:pointer;
-  }
-  .navstop:hover, .navstop:focus { outline:none; background: rgba(255,68,68,0.18); box-shadow: 0 0 0 2px #ff4444; }
-
-  /* ——— Turn-by-turn banner + ETA ——— */
-  .navbar {
-    position:absolute; top: 26px; left: 36px; right: 176px;
-    display:flex; align-items:center; gap: 18px;
-    padding: 16px 22px;
-    background: rgba(0,0,0,0.45);
-    border: 1.5px solid rgba(255,255,255,0.5);
-    border-radius: 18px; z-index: 20;
-  }
-  .nav-arrow { font-size: 46px; line-height: 1; font-weight: 300; flex:0 0 auto; width:48px; text-align:center; }
-  .nav-stack { display:flex; flex-direction:column; gap: 4px; min-width:0; }
-  .nav-dist { font-size: 34px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; }
-  .nav-instr {
-    font-size: 20px; font-weight: 300; opacity: 0.85; line-height: 1.15;
-    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-  }
-  .eta {
-    position:absolute; left:50%; bottom: 34px; transform: translateX(-50%);
-    padding: 12px 26px;
-    border: 1.5px solid rgba(255,255,255,0.4); border-radius: 100px;
-    font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums;
-    background: rgba(0,0,0,0.4); z-index: 20; white-space:nowrap;
-  }
-
-  /* Navigation-mode rearrangement: clear the top for the banner,
-     swap the next-feature pill for the ETA, keep speed + limit. */
-  .hud.navigating .top { justify-content: flex-end; }
-  .hud.navigating .gmeter { display:none; }
-  .hud.navigating .compass { display:none; }
-  .hud.navigating .next { display:none; }
-
-  /* ——— Toast ——— */
-  .toast {
-    position:absolute; left:50%; bottom: 100px; transform: translateX(-50%);
-    padding: 12px 22px; border-radius: 100px;
-    background: rgba(0,0,0,0.82); border:1px solid rgba(255,255,255,0.25);
-    font-size: 18px; font-weight: 300; z-index: 45; white-space:nowrap;
-  }
-
-  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -342,26 +402,18 @@
   <!-- Permission gate -->
   <div class="gate" id="gate">
     <h1>Drive HUD</h1>
-    <p>Live speed, posted limit, heading, and the next signal or stop ahead. Needs location and motion access.</p>
+    <p>Live speed, posted limit, heading, and on-demand turn-by-turn navigation. Needs location access.</p>
     <button id="startBtn">Start</button>
   </div>
 
   <!-- Main HUD -->
-  <div class="hud hidden" id="hud">
+  <div class="hidden" id="hud">
     <div class="top">
-      <div class="compass">
-        <div class="rose" id="rose"><div class="needle"></div></div>
-        <div class="heading-txt" id="headingTxt">—</div>
-      </div>
+      <div class="cardinal dim" id="cardinal">—</div>
       <div class="limit dim" id="limit">
         <div class="limit-label">SPEED<br>LIMIT</div>
         <div class="limit-val" id="limitVal">—</div>
       </div>
-    </div>
-
-    <div class="gmeter" id="gmeter">
-      <div class="gdial"><div class="gdot" id="gdot"></div></div>
-      <div class="g-txt"><span id="gVal">0.0</span><span class="g-unit">g</span></div>
     </div>
 
     <div class="speed-wrap">
@@ -369,96 +421,105 @@
       <div class="speed-unit">MPH</div>
     </div>
 
-    <div class="next dim" id="next">
-      <div class="next-icon" id="nextIcon">◇</div>
-      <div class="next-stack">
-        <div class="next-distance" id="nextDist">—</div>
-        <div class="next-label" id="nextLabel">scanning</div>
+    <div class="bottom idle" id="bottom">
+      <!-- Maneuver card: visible only when navigating -->
+      <div class="maneuver hidden" id="maneuver">
+        <div class="maneuver-icon" id="maneuverIcon">↑</div>
+        <div class="maneuver-stack">
+          <div class="maneuver-dist" id="maneuverDist">—</div>
+          <div class="maneuver-street" id="maneuverStreet">—</div>
+        </div>
       </div>
+
+      <!-- Search icon (idle + nav). Becomes "end" icon when navigating. -->
+      <button class="icon-btn" id="searchBtn" aria-label="Search destination">
+        <svg viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6.5"></circle>
+          <line x1="15.2" y1="15.2" x2="20" y2="20"></line>
+        </svg>
+      </button>
     </div>
-
-    <!-- Turn-by-turn banner (navigation mode) -->
-    <div class="navbar hidden" id="navbar">
-      <div class="nav-arrow" id="navArrow">↑</div>
-      <div class="nav-stack">
-        <div class="nav-dist" id="navDist">—</div>
-        <div class="nav-instr" id="navInstr">—</div>
-      </div>
-    </div>
-
-    <!-- ETA strip (navigation mode) -->
-    <div class="eta hidden" id="eta"><span id="etaText">—</span></div>
-
-    <!-- Low-key search button -->
-    <button class="search-btn focusable" id="searchBtn" aria-label="Search destination">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-      </svg>
-    </button>
-
-    <!-- Search overlay -->
-    <div class="search hidden" id="search">
-      <div class="search-bar">
-        <input id="searchInput" class="focusable" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Search address or place">
-        <button id="searchClose" class="focusable" aria-label="Close">✕</button>
-      </div>
-      <div class="search-hint">Write with your Neural Band to type, or use a paired keyboard. Arrow keys move; select to choose.</div>
-      <button class="navstop focusable hidden" id="navStop">End navigation</button>
-      <div class="search-results" id="searchResults"></div>
-    </div>
-
-    <!-- Transient toast -->
-    <div class="toast hidden" id="toast"></div>
   </div>
+
+  <!-- Search overlay -->
+  <div class="overlay hidden" id="searchOverlay">
+    <div class="search-header">
+      <div class="search-input empty" id="searchInput">
+        <span id="searchText">Enter address</span><span class="caret hidden" id="caret"></span>
+      </div>
+      <button class="small-btn" id="cancelBtn" aria-label="Cancel">
+        <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <!-- Results overlay -->
+  <div class="overlay hidden" id="resultsOverlay">
+    <div class="results-header">
+      <div class="results-title" id="resultsTitle">Results</div>
+      <button class="small-btn" id="resultsBackBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24"><polyline points="15 6 9 12 15 18"></polyline></svg>
+      </button>
+    </div>
+    <div class="results-list" id="resultsList"></div>
+  </div>
+
 </div>
 
 <script>
 (() => {
   'use strict';
 
-  // ——— State ———
-  const state = {
-    lat: null, lon: null,
-    speed: 0,            // m/s, smoothed
-    rawSpeed: 0,         // m/s, latest
-    gpsHeading: null,    // degrees from true north, GPS-derived
-    devHeading: null,    // degrees from true north, device-orientation-derived
-    speedLimit: null,    // mph
-    nextFeature: null,   // {distance(m), label, icon}
-    lastOSMt: 0,
-    lastOSMLat: null, lastOSMLon: null,
-    lastFixT: 0,
-    aLong: 0,            // m/s², smoothed longitudinal accel (+ = speeding up)
-    aLat: 0,             // m/s², smoothed lateral accel (+ = turning right)
-    nav: null,           // active navigation session (see startRoute)
-  };
-  let lastPos = null;
-  let accPrev = null;    // { t, speed, heading } for the g-force estimate
-  let searchTimer = null;
-  let toastTimer = null;
-
-  // ——— DOM ———
-  const $ = id => document.getElementById(id);
-  const els = {
-    gate: $('gate'), hud: $('hud'), startBtn: $('startBtn'),
-    speed: $('speed'),
-    limit: $('limit'), limitVal: $('limitVal'),
-    rose: $('rose'), headingTxt: $('headingTxt'),
-    next: $('next'), nextIcon: $('nextIcon'),
-    nextDist: $('nextDist'), nextLabel: $('nextLabel'),
-    gmeter: $('gmeter'), gdot: $('gdot'), gVal: $('gVal'),
-    searchBtn: $('searchBtn'),
-    search: $('search'), searchInput: $('searchInput'), searchClose: $('searchClose'), searchResults: $('searchResults'),
-    navStop: $('navStop'),
-    navbar: $('navbar'), navArrow: $('navArrow'), navDist: $('navDist'), navInstr: $('navInstr'),
-    eta: $('eta'), etaText: $('etaText'), toast: $('toast'),
-  };
-
-  // ——— Math helpers ———
+  // ===== Constants =====
   const MS_TO_MPH = 2.2369362921;
   const M_TO_FT = 3.2808399;
   const FT_PER_MI = 5280;
+  const OVERPASS = 'https://overpass-api.de/api/interpreter';
+  const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+  const OSRM = 'https://router.project-osrm.org/route/v1/driving';
 
+  // ===== State =====
+  const state = {
+    mode: 'idle',          // 'idle' | 'searching' | 'picking' | 'navigating'
+    lat: null, lon: null,
+    speed: 0, rawSpeed: 0,
+    gpsHeading: null,
+    speedLimit: null,
+    lastOSMt: 0, lastOSMLat: null, lastOSMLon: null,
+    // Search
+    query: '',
+    results: [],
+    // Routing
+    route: null,           // { steps: [...], destination: {lat,lon,label} }
+    stepIdx: 0,
+  };
+  let lastPos = null;
+
+  // ===== DOM =====
+  const $ = id => document.getElementById(id);
+  const els = {
+    gate: $('gate'), startBtn: $('startBtn'),
+    hud: $('hud'), bottom: $('bottom'),
+    cardinal: $('cardinal'),
+    speed: $('speed'),
+    limit: $('limit'), limitVal: $('limitVal'),
+    searchBtn: $('searchBtn'),
+    maneuver: $('maneuver'), maneuverIcon: $('maneuverIcon'),
+    maneuverDist: $('maneuverDist'), maneuverStreet: $('maneuverStreet'),
+    searchOverlay: $('searchOverlay'),
+    searchInput: $('searchInput'),
+    searchText: $('searchText'),
+    caret: $('caret'),
+    cancelBtn: $('cancelBtn'),
+    keyboard: $('keyboard'),
+    resultsOverlay: $('resultsOverlay'),
+    resultsTitle: $('resultsTitle'),
+    resultsBackBtn: $('resultsBackBtn'),
+    resultsList: $('resultsList'),
+  };
+
+  // ===== Math helpers =====
   function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371000;
     const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
@@ -467,32 +528,22 @@
     const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
-  function bearing(lat1, lon1, lat2, lon2) {
-    const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
-    const dλ = (lon2 - lon1) * Math.PI/180;
-    const y = Math.sin(dλ) * Math.cos(φ2);
-    const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(dλ);
-    return ((Math.atan2(y, x) * 180/Math.PI) + 360) % 360;
-  }
   function cardinal(deg) {
-    const dirs = ['N','NE','E','SE','S','SW','W','NW'];
-    return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+    const d = ['N','NE','E','SE','S','SW','W','NW'];
+    return d[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
   }
-  function effectiveHeading() {
-    // Prefer GPS heading when moving fast enough to be reliable.
-    if (state.gpsHeading != null && state.speed > 1.5) return state.gpsHeading;
-    if (state.devHeading != null) return state.devHeading;
-    return state.gpsHeading; // null when truly nothing
+  function formatDistance(meters) {
+    const ft = meters * M_TO_FT;
+    if (ft >= 1000) return (ft / FT_PER_MI).toFixed(ft >= FT_PER_MI * 10 ? 0 : 1) + ' mi';
+    return Math.round(ft / 10) * 10 + ' ft';
   }
 
-  // ——— Render (rAF batched, value-gated) ———
+  // ===== Render (rAF batched, value-gated) =====
   let pending = false;
   const last = {
-    speedInt: -1, limit: '_', headingTxt: '_', headingDeg: NaN,
-    distTxt: '_', labelTxt: '_', iconTxt: '_',
-    nextDim: null, limitState: '_', speedOver: null,
-    gTxt: '_', gx: NaN, gy: NaN, gHigh: null,
-    navOn: false, navInstr: '_', navDist: '_', navArrow: '_', etaText: '_',
+    speedInt:-1, limit:'_', cardinal:'_',
+    over:null, limitState:'_',
+    manDist:'_', manStreet:'_', manIcon:'_',
   };
   function scheduleRender() {
     if (pending) return;
@@ -502,18 +553,11 @@
   function render() {
     pending = false;
 
-    // Speed (integer mph)
+    // Speed
     const mph = Math.max(0, Math.round(state.speed * MS_TO_MPH));
-    if (mph !== last.speedInt) {
-      els.speed.textContent = mph;
-      last.speedInt = mph;
-    }
-    // Speed over limit highlight
+    if (mph !== last.speedInt) { els.speed.textContent = mph; last.speedInt = mph; }
     const over = state.speedLimit != null && mph > state.speedLimit + 4;
-    if (over !== last.speedOver) {
-      els.speed.classList.toggle('over', over);
-      last.speedOver = over;
-    }
+    if (over !== last.over) { els.speed.classList.toggle('over', over); last.over = over; }
 
     // Limit
     let limitState;
@@ -526,234 +570,113 @@
       last.limitState = limitState;
     }
     const limitTxt = state.speedLimit == null ? '—' : String(state.speedLimit);
-    if (limitTxt !== last.limit) {
-      els.limitVal.textContent = limitTxt;
-      last.limit = limitTxt;
-    }
+    if (limitTxt !== last.limit) { els.limitVal.textContent = limitTxt; last.limit = limitTxt; }
 
-    // Heading
-    const h = effectiveHeading();
-    if (h != null) {
-      const txt = `${cardinal(h)} ${Math.round(h)}°`;
-      if (txt !== last.headingTxt) {
-        els.headingTxt.textContent = txt;
-        last.headingTxt = txt;
-      }
-      // Rotate the rose so N always points to true north in the world.
-      // The rose is fixed in the user's view; N on the dial moves to the
-      // user's left as they turn right (clockwise heading increases).
-      const rounded = Math.round(h);
-      if (rounded !== last.headingDeg) {
-        els.rose.style.transform = `rotate(${-rounded}deg)`;
-        last.headingDeg = rounded;
-      }
+    // Cardinal (GPS heading only, persisted)
+    let cardTxt = '—';
+    let cardDim = true;
+    if (state.gpsHeading != null) {
+      cardTxt = cardinal(state.gpsHeading);
+      cardDim = state.speed < 1.5; // dim when stationary, last value persists
     }
+    if (cardTxt !== last.cardinal) { els.cardinal.textContent = cardTxt; last.cardinal = cardTxt; }
+    els.cardinal.classList.toggle('dim', cardDim);
 
-    // Estimated g-force: magnitude in g + a direction dot (up = forward).
-    const G = 9.80665;
-    const gx = state.aLat / G;    // + = right
-    const gy = state.aLong / G;   // + = forward
-    const gMag = Math.hypot(gx, gy);
-    const gTxt = gMag.toFixed(1);
-    if (gTxt !== last.gTxt) {
-      els.gVal.textContent = gTxt;
-      last.gTxt = gTxt;
-    }
-    // Clamp the vector to the 1g circle; forward maps to "up" on the dial.
-    let vx = gx, vy = -gy;
-    const vmag = Math.hypot(vx, vy);
-    if (vmag > 1) { vx /= vmag; vy /= vmag; }
-    const dotX = Math.round(vx * 26), dotY = Math.round(vy * 26);
-    if (dotX !== last.gx || dotY !== last.gy) {
-      els.gdot.style.transform = `translate(calc(-50% + ${dotX}px), calc(-50% + ${dotY}px))`;
-      last.gx = dotX; last.gy = dotY;
-    }
-    const gHigh = gMag > 0.6;
-    if (gHigh !== last.gHigh) {
-      els.gmeter.classList.toggle('high', gHigh);
-      last.gHigh = gHigh;
-    }
-
-    // Next feature
-    const nf = state.nextFeature;
-    if (nf) {
-      const ft = nf.distance * M_TO_FT;
-      const distTxt = ft >= 1000
-        ? (ft / FT_PER_MI).toFixed(1) + ' mi'
-        : Math.round(ft / 10) * 10 + ' ft';
-      if (distTxt !== last.distTxt) {
-        els.nextDist.textContent = distTxt;
-        last.distTxt = distTxt;
+    // Maneuver (only when navigating)
+    if (state.mode === 'navigating' && state.route) {
+      const step = state.route.steps[state.stepIdx];
+      if (step) {
+        const dist = formatDistance(step.remainingMeters);
+        if (dist !== last.manDist) { els.maneuverDist.textContent = dist; last.manDist = dist; }
+        const street = step.streetName || '—';
+        if (street !== last.manStreet) { els.maneuverStreet.textContent = street; last.manStreet = street; }
+        const icon = step.icon;
+        if (icon !== last.manIcon) { els.maneuverIcon.textContent = icon; last.manIcon = icon; }
       }
-      if (nf.label !== last.labelTxt) {
-        els.nextLabel.textContent = nf.label;
-        last.labelTxt = nf.label;
-      }
-      if (nf.icon !== last.iconTxt) {
-        els.nextIcon.textContent = nf.icon;
-        last.iconTxt = nf.icon;
-      }
-      if (last.nextDim !== false) {
-        els.next.classList.remove('dim');
-        last.nextDim = false;
-      }
-    } else {
-      if (last.distTxt !== '—') { els.nextDist.textContent = '—'; last.distTxt = '—'; }
-      if (last.labelTxt !== 'scanning') { els.nextLabel.textContent = 'scanning'; last.labelTxt = 'scanning'; }
-      if (last.iconTxt !== '◇') { els.nextIcon.textContent = '◇'; last.iconTxt = '◇'; }
-      if (last.nextDim !== true) {
-        els.next.classList.add('dim');
-        last.nextDim = true;
-      }
-    }
-
-    // Navigation: turn banner, ETA, and the layout swap
-    const nav = state.nav;
-    if (nav) {
-      if (last.navOn !== true) {
-        els.hud.classList.add('navigating');
-        els.navbar.classList.remove('hidden');
-        els.eta.classList.remove('hidden');
-        last.navOn = true;
-      }
-      if (nav.arrived) {
-        if (last.navInstr !== '__arrived__') {
-          els.navArrow.textContent = '◉';
-          els.navDist.textContent = 'Arrived';
-          els.navInstr.textContent = nav.dest.label || '';
-          els.etaText.textContent = 'You have arrived';
-          last.navInstr = '__arrived__';
-        }
-        if (!nav.exitTimer) nav.exitTimer = setTimeout(stopNav, 6000);
-      } else {
-        const stp = nav.steps[nav.idx] || {};
-        const distTxt = fmtDist(nav.distToTurn || 0);
-        if (distTxt !== last.navDist) { els.navDist.textContent = distTxt; last.navDist = distTxt; }
-        const instr = stp.instr || '—';
-        if (instr !== last.navInstr) { els.navInstr.textContent = instr; last.navInstr = instr; }
-        const arrow = stp.arrow || '↑';
-        if (arrow !== last.navArrow) { els.navArrow.textContent = arrow; last.navArrow = arrow; }
-        const mins = Math.max(1, Math.round((nav.remDur || 0) / 60));
-        const etaTxt = mins + ' min · ' + fmtDist(nav.remDist || 0);
-        if (etaTxt !== last.etaText) { els.etaText.textContent = etaTxt; last.etaText = etaTxt; }
-      }
-    } else if (last.navOn !== false) {
-      els.hud.classList.remove('navigating');
-      els.navbar.classList.add('hidden');
-      els.eta.classList.add('hidden');
-      last.navOn = false;
-      last.navInstr = '_'; last.navDist = '_'; last.navArrow = '_'; last.etaText = '_';
     }
   }
 
-  // ——— Geolocation ———
+  // ===== Mode switching =====
+  function setMode(m) {
+    state.mode = m;
+    // Update bottom layout
+    els.bottom.classList.toggle('idle', m === 'idle');
+    els.maneuver.classList.toggle('hidden', m !== 'navigating');
+
+    // Update search icon
+    if (m === 'navigating') {
+      // Becomes "end nav" — keep the same icon since it always opens search,
+      // but you can stop nav by selecting a new destination or refresh.
+    }
+
+    // Show/hide overlays
+    els.searchOverlay.classList.toggle('hidden', m !== 'searching');
+    els.resultsOverlay.classList.toggle('hidden', m !== 'picking');
+    els.hud.classList.toggle('hidden', m !== 'idle' && m !== 'navigating');
+
+    // Default focus per mode
+    if (m === 'idle' || m === 'navigating') {
+      els.searchBtn.focus();
+    } else if (m === 'searching') {
+      // Focus first letter key (a position 'q' if present, else first key)
+      const firstKey = els.keyboard.querySelector('[data-key="q"]') ||
+                       els.keyboard.querySelector('.key');
+      if (firstKey) firstKey.focus();
+      // Show caret
+      els.caret.classList.remove('hidden');
+    } else if (m === 'picking') {
+      const first = els.resultsList.querySelector('.result-item');
+      if (first) first.focus();
+    }
+    if (m !== 'searching') els.caret.classList.add('hidden');
+    scheduleRender();
+  }
+
+  // ===== Geolocation =====
   function onPosition(pos) {
     const t = pos.timestamp || Date.now();
     const { latitude, longitude, speed, heading } = pos.coords;
+    state.lat = latitude; state.lon = longitude;
 
-    state.lat = latitude;
-    state.lon = longitude;
-    state.lastFixT = t;
-
-    // Speed: prefer GPS-reported, else compute from last position
     let newSpeed;
-    if (speed != null && !isNaN(speed) && speed >= 0) {
-      newSpeed = speed;
-    } else if (lastPos) {
+    if (speed != null && !isNaN(speed) && speed >= 0) newSpeed = speed;
+    else if (lastPos) {
       const dt = (t - lastPos.t) / 1000;
       const d = haversine(lastPos.lat, lastPos.lon, latitude, longitude);
       newSpeed = dt > 0 ? d / dt : state.speed;
-    } else {
-      newSpeed = 0;
-    }
+    } else newSpeed = 0;
     state.rawSpeed = newSpeed;
-    // Light EMA smoothing so the big number doesn't jitter
     state.speed = state.speed * 0.55 + newSpeed * 0.45;
 
-    if (heading != null && !isNaN(heading) && state.speed > 1.5) {
-      state.gpsHeading = heading;
-    }
-
-    // Estimate g-forces (no real IMU): longitudinal from how fast speed
-    // changes; lateral from turn rate × speed (a_lat = v·dθ/dt).
-    const hNow = effectiveHeading();
-    if (accPrev && t > accPrev.t) {
-      const dt = (t - accPrev.t) / 1000;
-      if (dt > 0.05 && dt < 3) {
-        const aL = (state.speed - accPrev.speed) / dt;
-        let aLat = 0;
-        if (hNow != null && accPrev.heading != null) {
-          let dH = hNow - accPrev.heading;
-          while (dH > 180) dH -= 360;
-          while (dH < -180) dH += 360;
-          aLat = state.speed * (dH * Math.PI / 180) / dt;
-        }
-        state.aLong = state.aLong * 0.6 + aL * 0.4;
-        state.aLat = state.aLat * 0.6 + aLat * 0.4;
-      }
-    }
-    accPrev = { t, speed: state.speed, heading: hNow };
-
+    if (heading != null && !isNaN(heading) && state.speed > 1.5) state.gpsHeading = heading;
     lastPos = { lat: latitude, lon: longitude, t };
 
-    if (state.nav) updateNavigation();
+    // Update nav progress if navigating
+    if (state.mode === 'navigating' && state.route) updateNavProgress();
 
     scheduleRender();
     maybeQueryOSM();
   }
   function onPositionError(err) {
     console.warn('Geolocation error:', err.code, err.message);
-    if (err.code === 1) {
-      showError('Location permission denied. Enable it in glasses settings, then restart.');
-    } else if (err.code === 2) {
-      showError('Location unavailable. Check that your phone has GPS signal.');
-    }
+    if (err.code === 1) showError('Location permission denied. Enable it in glasses settings, then restart.');
+    else if (err.code === 2) showError('Location unavailable. Check phone GPS signal.');
   }
 
-  // ——— Device orientation (compass when stationary) ———
-  function onOrientation(e) {
-    // iOS Safari provides webkitCompassHeading (0 = north, clockwise).
-    // On other runtimes (likely MRBD), use alpha. Note alpha is counter-
-    // clockwise from north, so we convert: compass = 360 - alpha.
-    let h = null;
-    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
-      h = e.webkitCompassHeading;
-    } else if (typeof e.alpha === 'number' && !isNaN(e.alpha)) {
-      h = (360 - e.alpha) % 360;
-    }
-    if (h == null) return;
-    state.devHeading = h;
-    // Only push to render if we're using device heading (i.e., stationary)
-    if (!(state.gpsHeading != null && state.speed > 1.5)) {
-      scheduleRender();
-    }
-  }
-
-  // ——— OSM Overpass: speed limit + nearest signal/stop ahead ———
-  const OVERPASS = 'https://overpass-api.de/api/interpreter';
-
+  // ===== Overpass speed limit (kept; signal/stop logic removed) =====
   async function maybeQueryOSM() {
     if (state.lat == null) return;
     const now = Date.now();
     const moved = state.lastOSMLat == null ? Infinity
       : haversine(state.lat, state.lon, state.lastOSMLat, state.lastOSMLon);
-    // Throttle: refresh every 8s or after 25m of movement
     if (now - state.lastOSMt < 8000 && moved < 25) return;
-
     state.lastOSMt = now;
-    state.lastOSMLat = state.lat;
-    state.lastOSMLon = state.lon;
+    state.lastOSMLat = state.lat; state.lastOSMLon = state.lon;
 
-    const radius = 600;
-    // Two-part query: nearest road segment with maxspeed; signals/stops nearby
     const q =
       `[out:json][timeout:6];
-       (
-         way(around:25,${state.lat},${state.lon})["highway"]["maxspeed"];
-         node(around:${radius},${state.lat},${state.lon})["highway"~"^(traffic_signals|stop)$"];
-       );
+       way(around:25,${state.lat},${state.lon})["highway"]["maxspeed"];
        out tags center;`;
-
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 7000);
@@ -766,383 +689,420 @@
       clearTimeout(to);
       if (!r.ok) return;
       const data = await r.json();
-      processOSM(data);
-    } catch (e) {
-      // Network blip or rate-limit; silently keep going
-      console.warn('Overpass failed:', e.message || e);
-    }
+      let limit = null;
+      for (const el of data.elements) {
+        if (el.type === 'way' && el.tags && el.tags.maxspeed) {
+          const v = parseMaxspeed(el.tags.maxspeed);
+          if (v != null) { limit = v; break; }
+        }
+      }
+      state.speedLimit = limit;
+      scheduleRender();
+    } catch (e) { console.warn('Overpass:', e.message || e); }
   }
-
   function parseMaxspeed(raw) {
-    if (!raw) return null;
-    // Handles: "35", "35 mph", "50 km/h", "signals", "none"
     const m = String(raw).match(/(\d+)\s*(mph|km\/h)?/i);
     if (!m) return null;
     const v = parseInt(m[1], 10);
     const unit = (m[2] || '').toLowerCase();
     if (unit === 'km/h') return Math.round(v * 0.621371);
-    // Default assumption in US OSM data is mph if unitless on a US road,
-    // but globally OSM defaults to km/h. We assume mph (US driving HUD).
     return v;
   }
 
-  function processOSM(data) {
-    // Speed limit: any way with maxspeed within snap radius
-    let limit = null;
-    for (const el of data.elements) {
-      if (el.type === 'way' && el.tags && el.tags.maxspeed) {
-        const v = parseMaxspeed(el.tags.maxspeed);
-        if (v != null) { limit = v; break; }
+  // ===== Keyboard generation =====
+  // 10-col grid. Rows: numbers, qwerty, asdfgh+, zxcvbn+, action row.
+  const KEY_ROWS = [
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['q','w','e','r','t','y','u','i','o','p'],
+    ['a','s','d','f','g','h','j','k','l','.'],
+    ['z','x','c','v','b','n','m',',','-','/'],
+    [
+      { label: 'SPACE', val: ' ', cls: 'span-4 action' },
+      { label: '⌫', val: 'BACK', cls: 'span-2 action' },
+      { label: 'GO', val: 'GO', cls: 'span-2 action go' },
+      { label: '✕', val: 'CANCEL', cls: 'span-2 action' },
+    ],
+  ];
+  function buildKeyboard() {
+    els.keyboard.innerHTML = '';
+    let rowIdx = 0;
+    for (const row of KEY_ROWS) {
+      let colIdx = 0;
+      for (const k of row) {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        const isObj = typeof k === 'object';
+        const label = isObj ? k.label : k.toUpperCase();
+        const val = isObj ? k.val : k;
+        btn.textContent = label;
+        btn.dataset.key = val;
+        btn.dataset.row = rowIdx;
+        btn.dataset.col = colIdx;
+        if (isObj && k.cls) btn.className += ' ' + k.cls;
+        btn.addEventListener('click', () => onKeyPress(val));
+        els.keyboard.appendChild(btn);
+        colIdx += isObj ? (k.cls.includes('span-4') ? 4 : k.cls.includes('span-2') ? 2 : 1) : 1;
+      }
+      rowIdx++;
+    }
+  }
+
+  function onKeyPress(val) {
+    if (val === 'BACK') {
+      state.query = state.query.slice(0, -1);
+      updateSearchDisplay();
+    } else if (val === 'CANCEL') {
+      state.query = '';
+      updateSearchDisplay();
+      setMode(state.route ? 'navigating' : 'idle');
+    } else if (val === 'GO') {
+      if (state.query.trim().length > 0) submitSearch();
+    } else {
+      if (state.query.length < 80) {
+        state.query += val;
+        updateSearchDisplay();
       }
     }
-    state.speedLimit = limit;
+  }
 
-    // Next signal/stop ahead
-    const heading = effectiveHeading();
-    let best = null;
-    for (const el of data.elements) {
-      if (el.type !== 'node' || !el.tags || !el.tags.highway) continue;
-      const type = el.tags.highway;
-      if (type !== 'traffic_signals' && type !== 'stop') continue;
-      const d = haversine(state.lat, state.lon, el.lat, el.lon);
-
-      // Filter: ahead of user (within ±70° of heading) when we have one
-      if (heading != null) {
-        const b = bearing(state.lat, state.lon, el.lat, el.lon);
-        let diff = Math.abs(((b - heading + 540) % 360) - 180);
-        if (diff > 70) continue;
-      }
-      if (d < (best?.distance ?? Infinity)) {
-        best = {
-          distance: d,
-          label: type === 'traffic_signals' ? 'signal' : 'stop',
-          icon: type === 'traffic_signals' ? '●' : '◆',
-        };
-      }
+  function updateSearchDisplay() {
+    if (state.query.length === 0) {
+      els.searchText.textContent = 'Enter address';
+      els.searchInput.classList.add('empty');
+    } else {
+      els.searchText.textContent = state.query;
+      els.searchInput.classList.remove('empty');
     }
-    state.nextFeature = best;
-
-    scheduleRender();
   }
 
-  // ——— Search (Nominatim) + routing (OSRM), both keyless ———
-  const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-  const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
+  // ===== Nominatim search =====
+  async function submitSearch() {
+    setStatus(els.resultsList, 'Searching...', 'Looking up your destination.');
+    els.resultsTitle.textContent = '"' + state.query.toUpperCase() + '"';
+    setMode('picking');
 
-  const escapeHtml = s => String(s).replace(/[&<>"]/g,
-    c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-
-  function toast(msg) {
-    els.toast.textContent = msg;
-    els.toast.classList.remove('hidden');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 2500);
-  }
-
-  function openSearch() {
-    els.search.classList.remove('hidden');
-    els.searchInput.value = '';
-    els.searchResults.innerHTML = '';
-    els.navStop.classList.toggle('hidden', !state.nav);
-    // Reveal the field, then focus it synchronously within the activating
-    // gesture so the glasses' text entry (Neural Handwriting) engages. The
-    // forced reflow makes the now-visible input focusable right away.
-    void els.search.offsetHeight;
-    els.searchInput.focus();
-  }
-  function closeSearch() {
-    els.search.classList.add('hidden');
-    els.searchInput.blur();
-    els.searchBtn.focus();
-  }
-  function endNavFromSearch() { stopNav(); closeSearch(); }
-
-  // ——— D-pad focus management (MRBD maps Neural Band gestures to arrow keys) ———
-  function focusList() {
-    if (!els.search.classList.contains('hidden')) {
-      const items = [els.searchInput];
-      if (!els.navStop.classList.contains('hidden')) items.push(els.navStop);
-      els.searchResults.querySelectorAll('.sr-item').forEach(el => items.push(el));
-      items.push(els.searchClose);
-      return items;
-    }
-    if (!els.gate.classList.contains('hidden')) return [els.startBtn];
-    return [els.searchBtn];
-  }
-  function moveFocus(dir) {
-    const list = focusList();
-    if (!list.length) return;
-    let i = list.indexOf(document.activeElement);
-    i = i < 0 ? 0 : Math.max(0, Math.min(list.length - 1, i + dir));
-    list[i].focus();
-  }
-
-  async function runSearch(q) {
-    if (!q || q.trim().length < 3) { els.searchResults.innerHTML = ''; return; }
-    els.searchResults.innerHTML = '<div class="sr-note">Searching...</div>';
     try {
-      const url = new URL(NOMINATIM);
-      url.searchParams.set('q', q);
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('limit', '6');
-      url.searchParams.set('addressdetails', '1');
+      const params = new URLSearchParams({
+        q: state.query,
+        format: 'jsonv2',
+        addressdetails: '1',
+        limit: '6',
+      });
+      // Bias to current location if available
       if (state.lat != null) {
-        const d = 0.6; // bias toward, but don't restrict to, the area around us
-        url.searchParams.set('viewbox', `${state.lon - d},${state.lat + d},${state.lon + d},${state.lat - d}`);
-        url.searchParams.set('bounded', '0');
+        // Build a ~50km viewbox around user for better local results
+        const d = 0.5;
+        params.set('viewbox', `${state.lon - d},${state.lat + d},${state.lon + d},${state.lat - d}`);
+        params.set('bounded', '0');
       }
-      const r = await fetch(url, { headers: { Accept: 'application/json' } });
-      if (!r.ok) throw new Error('search ' + r.status);
-      renderResults(await r.json());
-    } catch (e) {
-      els.searchResults.innerHTML = '<div class="sr-note">Search failed. Try again.</div>';
-    }
-  }
-
-  function renderResults(data) {
-    if (!data || !data.length) { els.searchResults.innerHTML = '<div class="sr-note">No matches.</div>'; return; }
-    els.searchResults.innerHTML = '';
-    data.forEach(item => {
-      const parts = (item.display_name || 'Unknown').split(', ');
-      const div = document.createElement('div');
-      div.className = 'sr-item focusable';
-      div.tabIndex = -1;
-      div.innerHTML = `<div class="sr-title">${escapeHtml(parts[0])}</div>` +
-        `<div class="sr-sub">${escapeHtml(parts.slice(1, 4).join(', '))}</div>`;
-      div.addEventListener('click', () => {
-        closeSearch();
-        startRoute(parseFloat(item.lat), parseFloat(item.lon), parts[0]);
-      });
-      els.searchResults.appendChild(div);
-    });
-  }
-
-  async function startRoute(dlat, dlon, label) {
-    if (state.lat == null) { toast('Waiting for GPS...'); return; }
-    toast('Finding route...');
-    const route = await fetchRoute(state.lat, state.lon, dlat, dlon);
-    if (!route) { toast('No route found'); return; }
-    state.nav = {
-      dest: { lat: dlat, lon: dlon, label: label || 'Destination' },
-      steps: route.steps, geometry: route.geometry,
-      idx: 0, totalDist: route.distance, totalDur: route.duration,
-      distToTurn: 0, remDist: route.distance, remDur: route.duration,
-      arrived: false, offCount: 0, rerouting: false, exitTimer: null,
-    };
-    updateNavigation();
-    scheduleRender();
-  }
-
-  async function fetchRoute(slat, slon, dlat, dlon) {
-    try {
-      const url = OSRM + `${slon},${slat};${dlon},${dlat}` +
-        '?overview=full&geometries=geojson&steps=true&annotations=false';
       const ctrl = new AbortController();
-      const to = setTimeout(() => ctrl.abort(), 12000);
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(to);
-      if (!r.ok) return null;
-      const data = await r.json();
-      if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
-      const rt = data.routes[0];
-      const geometry = (rt.geometry.coordinates || []).map(c => ({ lat: c[1], lon: c[0] }));
-      const steps = (rt.legs[0].steps || []).map(s => {
-        const m = s.maneuver;
-        return {
-          lat: m.location[1], lon: m.location[0],
-          dist: s.distance || 0,
-          instr: maneuverText(m, s.name || ''),
-          arrow: maneuverArrow(m),
-        };
+      const to = setTimeout(() => ctrl.abort(), 9000);
+      const r = await fetch(NOMINATIM + '?' + params.toString(), {
+        headers: { 'Accept': 'application/json' },
+        signal: ctrl.signal,
       });
-      return { steps, geometry, distance: rt.distance, duration: rt.duration };
-    } catch (e) { return null; }
-  }
-
-  function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
-  function maneuverText(m, road) {
-    const mod = m.modifier || '';
-    const onto = road ? ' onto ' + road : '';
-    switch (m.type) {
-      case 'depart': return road ? 'Head out on ' + road : 'Start driving';
-      case 'turn':
-      case 'end of road': return 'Turn ' + (mod || 'ahead') + onto;
-      case 'merge': return 'Merge' + (mod ? ' ' + mod : '') + onto;
-      case 'on ramp': return 'Take the ramp' + onto;
-      case 'off ramp': return 'Take the exit' + onto;
-      case 'fork': return 'Keep ' + (mod || 'straight') + onto;
-      case 'continue': return 'Continue' + (mod && mod !== 'straight' ? ' ' + mod : '') + onto;
-      case 'roundabout':
-      case 'rotary': return 'Enter the roundabout' + (m.exit ? ', exit ' + m.exit : '');
-      case 'new name': return 'Continue' + onto;
-      case 'arrive': return road ? 'Arrive at ' + road : 'Arrive at destination';
-      default: return mod ? cap(mod) + onto : 'Continue' + onto;
+      clearTimeout(to);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      state.results = data;
+      renderResults(data);
+    } catch (e) {
+      console.warn('Nominatim failed:', e);
+      setStatus(els.resultsList, 'Search failed',
+        'Check your connection and try again.');
     }
   }
-  function maneuverArrow(m) {
-    if (m.type === 'arrive') return '◉';
-    if (m.type === 'roundabout' || m.type === 'rotary') return '↻';
-    switch (m.modifier) {
-      case 'left': case 'sharp left': return '←';
-      case 'slight left': return '↖';
-      case 'right': case 'sharp right': return '→';
+
+  function setStatus(container, title, sub) {
+    container.innerHTML =
+      '<div class="status"><div class="status-title">' + title + '</div>' +
+      '<div class="status-sub">' + sub + '</div></div>';
+  }
+
+  function renderResults(results) {
+    els.resultsList.innerHTML = '';
+    if (!results || results.length === 0) {
+      setStatus(els.resultsList, 'No results',
+        'Try a more specific address or include a city.');
+      return;
+    }
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      const btn = document.createElement('button');
+      btn.className = 'result-item';
+      const name = r.name || (r.display_name || '').split(',')[0] || 'Unknown';
+      const addr = r.display_name || '';
+      btn.innerHTML =
+        '<div class="result-name">' + escapeHtml(name) + '</div>' +
+        '<div class="result-addr">' + escapeHtml(addr) + '</div>';
+      btn.addEventListener('click', () => selectResult(r));
+      els.resultsList.appendChild(btn);
+    }
+    const first = els.resultsList.querySelector('.result-item');
+    if (first) first.focus();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  // ===== OSRM routing =====
+  async function selectResult(r) {
+    const destLat = parseFloat(r.lat);
+    const destLon = parseFloat(r.lon);
+    const label = (r.display_name || '').split(',')[0] || 'Destination';
+
+    if (state.lat == null) {
+      setStatus(els.resultsList, 'No location yet',
+        'Waiting for a GPS fix. Try again in a moment.');
+      return;
+    }
+    setStatus(els.resultsList, 'Routing...', 'Building turn-by-turn directions.');
+
+    const url = `${OSRM}/${state.lon},${state.lat};${destLon},${destLat}` +
+      '?overview=false&steps=true&annotations=false';
+
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 10000);
+      const r2 = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (!r2.ok) throw new Error('HTTP ' + r2.status);
+      const data = await r2.json();
+      if (!data.routes || !data.routes.length) {
+        setStatus(els.resultsList, 'No route',
+          'Couldn’t build a route to that destination.');
+        return;
+      }
+      const route = data.routes[0];
+      const steps = [];
+      for (const leg of route.legs) {
+        for (const s of leg.steps) {
+          steps.push({
+            lat: s.maneuver.location[1],
+            lon: s.maneuver.location[0],
+            type: s.maneuver.type,
+            modifier: s.maneuver.modifier || '',
+            distanceM: s.distance,
+            remainingMeters: s.distance,
+            streetName: s.name || (s.ref || ''),
+            icon: maneuverIcon(s.maneuver.type, s.maneuver.modifier),
+          });
+        }
+      }
+      // Add a synthetic "arrive" if last step isn't already
+      state.route = { steps, destination: { lat: destLat, lon: destLon, label } };
+      state.stepIdx = 0;
+      setMode('navigating');
+      updateNavProgress();
+    } catch (e) {
+      console.warn('OSRM failed:', e);
+      setStatus(els.resultsList, 'Routing failed',
+        'Check your connection and try again.');
+    }
+  }
+
+  // Map OSRM maneuver to a simple unicode arrow
+  function maneuverIcon(type, modifier) {
+    if (type === 'depart') return '↑';
+    if (type === 'arrive') return '⦿';
+    if (type === 'roundabout' || type === 'rotary') return '⟲';
+    if (type === 'merge' || type === 'fork' || type === 'on ramp') {
+      if (modifier && modifier.includes('left')) return '↖';
+      if (modifier && modifier.includes('right')) return '↗';
+      return '↑';
+    }
+    // turn, end of road, continue, new name, etc.
+    switch (modifier) {
+      case 'left':         return '↰';
+      case 'right':        return '↱';
+      case 'slight left':  return '↖';
       case 'slight right': return '↗';
-      case 'uturn': return '↩';
+      case 'sharp left':   return '↙';
+      case 'sharp right':  return '↘';
+      case 'uturn':        return '⮌';
+      case 'straight':     return '↑';
       default: return '↑';
     }
   }
 
-  function fmtDist(m) {
-    const ft = m * M_TO_FT;
-    if (ft >= 1000) return (ft / FT_PER_MI).toFixed(1) + ' mi';
-    return Math.max(0, Math.round(ft / 10) * 10) + ' ft';
-  }
+  // ===== Nav progress: advance step when user passes the maneuver point =====
+  function updateNavProgress() {
+    if (!state.route) return;
+    const steps = state.route.steps;
+    if (state.stepIdx >= steps.length) return;
 
-  function stopNav() {
-    if (state.nav && state.nav.exitTimer) clearTimeout(state.nav.exitTimer);
-    state.nav = null;
-    scheduleRender();
-  }
+    // Distance from user to the *target* of the current step (next maneuver point).
+    // OSRM step.maneuver.location is the START of the step, so the relevant point
+    // for "distance until you turn" is the START of the *next* step.
+    const nextStep = steps[state.stepIdx + 1] || steps[steps.length - 1];
+    const d = haversine(state.lat, state.lon, nextStep.lat, nextStep.lon);
 
-  function reroute() {
-    const nav = state.nav;
-    if (!nav) return;
-    nav.rerouting = true;
-    toast('Rerouting...');
-    fetchRoute(state.lat, state.lon, nav.dest.lat, nav.dest.lon).then(route => {
-      if (!state.nav) return;
-      state.nav.rerouting = false;
-      if (route) {
-        Object.assign(state.nav, {
-          steps: route.steps, geometry: route.geometry, idx: 0,
-          totalDist: route.distance, totalDur: route.duration, offCount: 0,
-        });
-        updateNavigation();
-        scheduleRender();
+    // Advance if we've passed the next maneuver point
+    if (d < 20 && state.stepIdx + 1 < steps.length) {
+      state.stepIdx++;
+      // Recompute remaining
+      const after = steps[state.stepIdx + 1] || steps[steps.length - 1];
+      steps[state.stepIdx].remainingMeters =
+        haversine(state.lat, state.lon, after.lat, after.lon);
+    } else {
+      // Just update remainingMeters live so the distance counts down
+      steps[state.stepIdx].remainingMeters = d;
+    }
+
+    // Arrive: last step reached and within 30m of destination
+    if (state.stepIdx === steps.length - 1) {
+      const dest = state.route.destination;
+      const dDest = haversine(state.lat, state.lon, dest.lat, dest.lon);
+      if (dDest < 30) {
+        // Show arrived state for a moment, then back to idle
+        steps[state.stepIdx].icon = '⦿';
+        steps[state.stepIdx].streetName = dest.label || 'Arrived';
+        steps[state.stepIdx].remainingMeters = 0;
+        setTimeout(() => {
+          state.route = null;
+          state.stepIdx = 0;
+          setMode('idle');
+        }, 6000);
       }
-    });
-  }
-
-  function nearestRouteDist(lat, lon, geom) {
-    let min = Infinity;
-    for (let i = 0; i < geom.length; i++) {
-      const d = haversine(lat, lon, geom[i].lat, geom[i].lon);
-      if (d < min) min = d;
     }
-    return min;
   }
 
-  function updateNavigation() {
-    const nav = state.nav;
-    if (!nav || state.lat == null) return;
-    const steps = nav.steps;
-    let stp = steps[nav.idx];
-    if (!stp) return;
-    let dMan = haversine(state.lat, state.lon, stp.lat, stp.lon);
-    while (nav.idx < steps.length - 1 && dMan < 25) {
-      nav.idx++; stp = steps[nav.idx];
-      dMan = haversine(state.lat, state.lon, stp.lat, stp.lon);
-    }
-    nav.distToTurn = dMan;
-    let rem = dMan;
-    for (let i = nav.idx + 1; i < steps.length; i++) rem += steps[i].dist;
-    nav.remDist = rem;
-    nav.remDur = nav.totalDist > 0 ? nav.totalDur * (rem / nav.totalDist) : 0;
-    const dDest = haversine(state.lat, state.lon, nav.dest.lat, nav.dest.lon);
-    if (nav.idx >= steps.length - 1 && dDest < 30) nav.arrived = true;
-    const off = nearestRouteDist(state.lat, state.lon, nav.geometry);
-    nav.offCount = off > 60 ? (nav.offCount || 0) + 1 : 0;
-    if (nav.offCount >= 2 && !nav.rerouting && !nav.arrived) reroute();
-  }
-
-  // ——— Error display ———
+  // ===== Error display =====
   function showError(msg) {
     els.hud.classList.add('hidden');
+    els.searchOverlay.classList.add('hidden');
+    els.resultsOverlay.classList.add('hidden');
     els.gate.classList.remove('hidden');
     els.gate.classList.add('error');
-    els.gate.querySelector('h1').textContent = 'Can’t start';
+    els.gate.querySelector('h1').textContent = "Can't start";
     els.gate.querySelector('p').textContent = msg;
     els.startBtn.textContent = 'Retry';
     els.startBtn.focus();
   }
 
-  // ——— Start ———
+  // ===== Start =====
   let watchId = null;
   async function start() {
     els.gate.classList.add('hidden');
     els.gate.classList.remove('error');
-    els.hud.classList.remove('hidden');
+    els.gate.querySelector('h1').textContent = 'Drive HUD';
 
-    // Orientation permission (iOS Safari path; MRBD typically auto-grants)
-    try {
-      if (typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function') {
-        const res = await DeviceOrientationEvent.requestPermission();
-        if (res === 'granted') {
-          window.addEventListener('deviceorientation', onOrientation);
-        }
-      } else if (typeof DeviceOrientationEvent !== 'undefined') {
-        window.addEventListener('deviceorientation', onOrientation);
-      }
-    } catch (e) { /* keep going without compass */ }
-
-    // Geolocation
     if (!('geolocation' in navigator)) {
       showError('This device does not expose geolocation to web apps.');
       return;
     }
     if (watchId != null) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
-      onPosition,
-      onPositionError,
+      onPosition, onPositionError,
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 1000 }
     );
 
+    buildKeyboard();
+    setMode('idle');
     scheduleRender();
   }
 
-  // ——— D-pad input: arrow keys move focus, Enter selects, Esc closes ———
-  document.addEventListener('keydown', e => {
-    const inInput = document.activeElement === els.searchInput;
-    if (e.key === 'Enter') {
-      if (!els.gate.classList.contains('hidden')) { e.preventDefault(); start(); return; }
-      const el = document.activeElement;
-      if (el && !inInput && (el.classList.contains('focusable') || el.classList.contains('sr-item'))) {
-        e.preventDefault();
-        el.click();
+  // ===== Button bindings =====
+  els.startBtn.addEventListener('click', start);
+  els.searchBtn.addEventListener('click', () => setMode('searching'));
+  els.cancelBtn.addEventListener('click', () => {
+    state.query = '';
+    updateSearchDisplay();
+    setMode(state.route ? 'navigating' : 'idle');
+  });
+  els.resultsBackBtn.addEventListener('click', () => setMode('searching'));
+
+  // ===== D-pad input handling =====
+  // Strategy: arrow keys move focus among the focusable elements in the current
+  // overlay using spatial proximity (rect centers). Enter activates focused.
+  function focusables() {
+    if (state.mode === 'searching') {
+      return Array.from(document.querySelectorAll('#searchOverlay .key, #searchOverlay .small-btn'));
+    }
+    if (state.mode === 'picking') {
+      return Array.from(document.querySelectorAll('#resultsOverlay .result-item, #resultsOverlay .small-btn'));
+    }
+    if (state.mode === 'idle' || state.mode === 'navigating') {
+      return [els.searchBtn]; // single focusable on HUD
+    }
+    return [];
+  }
+
+  function moveFocus(dir) {
+    const els_ = focusables();
+    if (els_.length === 0) return;
+    const cur = document.activeElement;
+    if (!els_.includes(cur)) { els_[0].focus(); return; }
+    if (els_.length === 1) return;
+
+    const curRect = cur.getBoundingClientRect();
+    const cx = curRect.left + curRect.width/2;
+    const cy = curRect.top + curRect.height/2;
+
+    let best = null, bestScore = Infinity;
+    for (const el of els_) {
+      if (el === cur) continue;
+      const r = el.getBoundingClientRect();
+      const ex = r.left + r.width/2;
+      const ey = r.top + r.height/2;
+      const dx = ex - cx, dy = ey - cy;
+      let primary, secondary;
+      if (dir === 'right') { if (dx <= 1) continue; primary = dx; secondary = Math.abs(dy); }
+      else if (dir === 'left') { if (dx >= -1) continue; primary = -dx; secondary = Math.abs(dy); }
+      else if (dir === 'down') { if (dy <= 1) continue; primary = dy; secondary = Math.abs(dx); }
+      else { if (dy >= -1) continue; primary = -dy; secondary = Math.abs(dx); }
+      // Weight: prefer same-axis alignment (secondary low)
+      const score = primary + secondary * 2;
+      if (score < bestScore) { bestScore = score; best = el; }
+    }
+    // Fallback: in same row if Left/Right at edge, wrap
+    if (!best && (dir === 'left' || dir === 'right')) {
+      const sameRow = els_.filter(el => {
+        const r = el.getBoundingClientRect();
+        return Math.abs((r.top + r.height/2) - cy) < curRect.height/2;
+      }).sort((a,b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+      if (sameRow.length > 1) {
+        const i = sameRow.indexOf(cur);
+        if (i !== -1) best = sameRow[dir === 'right' ? (i + 1) % sameRow.length
+                                                    : (i - 1 + sameRow.length) % sameRow.length];
       }
-    } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && !inInput)) {
-      e.preventDefault(); moveFocus(1);
-    } else if (e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && !inInput)) {
-      e.preventDefault(); moveFocus(-1);
-    } else if (e.key === 'Escape') {
-      if (!els.search.classList.contains('hidden')) closeSearch();
+    }
+    if (best) best.focus();
+  }
+
+  document.addEventListener('keydown', e => {
+    // Pre-start: gate
+    if (!els.gate.classList.contains('hidden')) {
+      if (e.key === 'Enter') { e.preventDefault(); start(); }
+      return;
+    }
+    switch (e.key) {
+      case 'ArrowUp':    moveFocus('up');    e.preventDefault(); break;
+      case 'ArrowDown':  moveFocus('down');  e.preventDefault(); break;
+      case 'ArrowLeft':  moveFocus('left');  e.preventDefault(); break;
+      case 'ArrowRight': moveFocus('right'); e.preventDefault(); break;
+      case 'Enter':
+        if (document.activeElement && document.activeElement.click) {
+          document.activeElement.click();
+          e.preventDefault();
+        }
+        break;
+      case 'Escape':
+        if (state.mode === 'searching') els.cancelBtn.click();
+        else if (state.mode === 'picking') els.resultsBackBtn.click();
+        e.preventDefault();
+        break;
     }
   });
 
-  els.startBtn.addEventListener('click', start);
   window.addEventListener('load', () => els.startBtn.focus());
 
-  // ——— Search wiring ———
-  els.searchBtn.addEventListener('click', e => { e.stopPropagation(); openSearch(); });
-  els.searchClose.addEventListener('click', e => { e.stopPropagation(); closeSearch(); });
-  els.navStop.addEventListener('click', e => { e.stopPropagation(); endNavFromSearch(); });
-  els.searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    const q = els.searchInput.value;
-    searchTimer = setTimeout(() => runSearch(q), 500);
-  });
-  els.searchInput.addEventListener('keydown', e => {
-    // Enter runs the search; let arrow keys bubble to the D-pad handler.
-    if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); runSearch(els.searchInput.value); }
-  });
-
-  // Re-render every 500ms while running so distance counts down smoothly
-  // even between GPS fixes. Cheap because render() short-circuits on
-  // unchanged values.
+  // Re-render twice a second so live distance counts down between GPS fixes
   setInterval(() => {
-    if (!els.hud.classList.contains('hidden') && state.nextFeature && state.lat != null) {
-      // Reproject distance from current position; cheaper than re-querying OSM
+    if (state.mode === 'navigating' && state.route && state.lat != null) {
+      updateNavProgress();
       scheduleRender();
     }
   }, 500);
