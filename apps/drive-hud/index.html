@@ -240,6 +240,103 @@
   .gate.error h1 { font-size: 36px; }
   .gate.error p { color: #ff8a8a; opacity: 1; }
 
+  /* ——— Low-key menu button + menu ——— */
+  .menu-btn {
+    position:absolute; right: 28px; bottom: 30px;
+    width: 54px; height: 54px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; background: rgba(0,0,0,0.35);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    border-radius: 50%;
+    opacity: 0.55; cursor: pointer;
+    transition: opacity 150ms ease, background 150ms ease;
+    z-index: 30;
+  }
+  .menu-btn:hover, .menu-btn:focus { opacity: 1; background: rgba(255,255,255,0.1); outline:none; }
+  .menu {
+    position:absolute; right: 28px; bottom: 94px;
+    display:flex; flex-direction:column;
+    background:#0a0a0a;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: 16px; overflow:hidden;
+    z-index: 31; min-width: 248px;
+  }
+  .menu-item {
+    appearance:none; text-align:left;
+    font:inherit; font-size: 20px; font-weight: 300; color:#fff;
+    background: transparent; border:0;
+    padding: 16px 22px; cursor:pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .menu-item:last-child { border-bottom: 0; }
+  .menu-item:hover, .menu-item:focus { background: rgba(255,255,255,0.08); outline:none; }
+
+  /* ——— Search overlay ——— */
+  .search {
+    position:absolute; inset:0; z-index: 40;
+    background:#000; display:flex; flex-direction:column;
+    padding: 28px 30px 0;
+  }
+  .search-bar { display:flex; align-items:center; gap: 14px; }
+  #searchInput {
+    flex:1; min-width:0; font:inherit; font-size: 24px; font-weight: 300; color:#fff;
+    background:#141414; border: 1.5px solid #444; border-radius: 14px; padding: 16px 18px;
+  }
+  #searchInput:focus { outline:none; border-color:#fff; }
+  #searchInput::placeholder { color:#777; }
+  #searchClose {
+    flex:0 0 auto; width: 54px; height: 54px;
+    font:inherit; font-size: 22px; color:#fff;
+    background:transparent; border:1.5px solid #444; border-radius: 50%; cursor:pointer;
+  }
+  #searchClose:hover { background: rgba(255,255,255,0.08); }
+  .search-results { margin-top: 18px; overflow-y:auto; scrollbar-width:none; }
+  .search-results::-webkit-scrollbar { display:none; }
+  .sr-item { padding: 16px 6px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor:pointer; }
+  .sr-item:hover { background: rgba(255,255,255,0.05); }
+  .sr-title { font-size: 21px; font-weight: 400; }
+  .sr-sub { font-size: 15px; opacity: 0.6; margin-top: 4px; }
+  .sr-note { padding: 20px 6px; font-size: 17px; opacity: 0.6; }
+
+  /* ——— Turn-by-turn banner + ETA ——— */
+  .navbar {
+    position:absolute; top: 26px; left: 36px; right: 176px;
+    display:flex; align-items:center; gap: 18px;
+    padding: 16px 22px;
+    background: rgba(0,0,0,0.45);
+    border: 1.5px solid rgba(255,255,255,0.5);
+    border-radius: 18px; z-index: 20;
+  }
+  .nav-arrow { font-size: 46px; line-height: 1; font-weight: 300; flex:0 0 auto; width:48px; text-align:center; }
+  .nav-stack { display:flex; flex-direction:column; gap: 4px; min-width:0; }
+  .nav-dist { font-size: 34px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; }
+  .nav-instr {
+    font-size: 20px; font-weight: 300; opacity: 0.85; line-height: 1.15;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .eta {
+    position:absolute; left:50%; bottom: 34px; transform: translateX(-50%);
+    padding: 12px 26px;
+    border: 1.5px solid rgba(255,255,255,0.4); border-radius: 100px;
+    font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums;
+    background: rgba(0,0,0,0.4); z-index: 20; white-space:nowrap;
+  }
+
+  /* Navigation-mode rearrangement: clear the top for the banner,
+     swap the next-feature pill for the ETA, keep speed + limit. */
+  .hud.navigating .top { justify-content: flex-end; }
+  .hud.navigating .gmeter { display:none; }
+  .hud.navigating .compass { display:none; }
+  .hud.navigating .next { display:none; }
+
+  /* ——— Toast ——— */
+  .toast {
+    position:absolute; left:50%; bottom: 100px; transform: translateX(-50%);
+    padding: 12px 22px; border-radius: 100px;
+    background: rgba(0,0,0,0.82); border:1px solid rgba(255,255,255,0.25);
+    font-size: 18px; font-weight: 300; z-index: 45; white-space:nowrap;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -283,6 +380,45 @@
         <div class="next-label" id="nextLabel">scanning</div>
       </div>
     </div>
+
+    <!-- Turn-by-turn banner (navigation mode) -->
+    <div class="navbar hidden" id="navbar">
+      <div class="nav-arrow" id="navArrow">↑</div>
+      <div class="nav-stack">
+        <div class="nav-dist" id="navDist">—</div>
+        <div class="nav-instr" id="navInstr">—</div>
+      </div>
+    </div>
+
+    <!-- ETA strip (navigation mode) -->
+    <div class="eta hidden" id="eta"><span id="etaText">—</span></div>
+
+    <!-- Low-key menu button -->
+    <button class="menu-btn" id="menuBtn" aria-label="Search and menu">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+      </svg>
+    </button>
+
+    <!-- Menu panel -->
+    <div class="menu hidden" id="menu">
+      <button class="menu-item" id="miSearch">Search destination</button>
+      <button class="menu-item hidden" id="miStop">End navigation</button>
+      <button class="menu-item" id="miRestart">Restart GPS</button>
+      <button class="menu-item" id="miPerms">Location permission</button>
+    </div>
+
+    <!-- Search overlay -->
+    <div class="search hidden" id="search">
+      <div class="search-bar">
+        <input id="searchInput" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search address or place">
+        <button id="searchClose" aria-label="Close">✕</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <!-- Transient toast -->
+    <div class="toast hidden" id="toast"></div>
   </div>
 </div>
 
@@ -304,9 +440,12 @@
     lastFixT: 0,
     aLong: 0,            // m/s², smoothed longitudinal accel (+ = speeding up)
     aLat: 0,             // m/s², smoothed lateral accel (+ = turning right)
+    nav: null,           // active navigation session (see startRoute)
   };
   let lastPos = null;
   let accPrev = null;    // { t, speed, heading } for the g-force estimate
+  let searchTimer = null;
+  let toastTimer = null;
 
   // ——— DOM ———
   const $ = id => document.getElementById(id);
@@ -318,6 +457,11 @@
     next: $('next'), nextIcon: $('nextIcon'),
     nextDist: $('nextDist'), nextLabel: $('nextLabel'),
     gmeter: $('gmeter'), gdot: $('gdot'), gVal: $('gVal'),
+    menuBtn: $('menuBtn'), menu: $('menu'),
+    miSearch: $('miSearch'), miStop: $('miStop'), miRestart: $('miRestart'), miPerms: $('miPerms'),
+    search: $('search'), searchInput: $('searchInput'), searchClose: $('searchClose'), searchResults: $('searchResults'),
+    navbar: $('navbar'), navArrow: $('navArrow'), navDist: $('navDist'), navInstr: $('navInstr'),
+    eta: $('eta'), etaText: $('etaText'), toast: $('toast'),
   };
 
   // ——— Math helpers ———
@@ -358,6 +502,7 @@
     distTxt: '_', labelTxt: '_', iconTxt: '_',
     nextDim: null, limitState: '_', speedOver: null,
     gTxt: '_', gx: NaN, gy: NaN, gHigh: null,
+    navOn: false, navInstr: '_', navDist: '_', navArrow: '_', etaText: '_',
   };
   function scheduleRender() {
     if (pending) return;
@@ -471,6 +616,44 @@
         last.nextDim = true;
       }
     }
+
+    // Navigation: turn banner, ETA, and the layout swap
+    const nav = state.nav;
+    if (nav) {
+      if (last.navOn !== true) {
+        els.hud.classList.add('navigating');
+        els.navbar.classList.remove('hidden');
+        els.eta.classList.remove('hidden');
+        last.navOn = true;
+      }
+      if (nav.arrived) {
+        if (last.navInstr !== '__arrived__') {
+          els.navArrow.textContent = '◉';
+          els.navDist.textContent = 'Arrived';
+          els.navInstr.textContent = nav.dest.label || '';
+          els.etaText.textContent = 'You have arrived';
+          last.navInstr = '__arrived__';
+        }
+        if (!nav.exitTimer) nav.exitTimer = setTimeout(stopNav, 6000);
+      } else {
+        const stp = nav.steps[nav.idx] || {};
+        const distTxt = fmtDist(nav.distToTurn || 0);
+        if (distTxt !== last.navDist) { els.navDist.textContent = distTxt; last.navDist = distTxt; }
+        const instr = stp.instr || '—';
+        if (instr !== last.navInstr) { els.navInstr.textContent = instr; last.navInstr = instr; }
+        const arrow = stp.arrow || '↑';
+        if (arrow !== last.navArrow) { els.navArrow.textContent = arrow; last.navArrow = arrow; }
+        const mins = Math.max(1, Math.round((nav.remDur || 0) / 60));
+        const etaTxt = mins + ' min · ' + fmtDist(nav.remDist || 0);
+        if (etaTxt !== last.etaText) { els.etaText.textContent = etaTxt; last.etaText = etaTxt; }
+      }
+    } else if (last.navOn !== false) {
+      els.hud.classList.remove('navigating');
+      els.navbar.classList.add('hidden');
+      els.eta.classList.add('hidden');
+      last.navOn = false;
+      last.navInstr = '_'; last.navDist = '_'; last.navArrow = '_'; last.etaText = '_';
+    }
   }
 
   // ——— Geolocation ———
@@ -522,6 +705,8 @@
     accPrev = { t, speed: state.speed, heading: hNow };
 
     lastPos = { lat: latitude, lon: longitude, t };
+
+    if (state.nav) updateNavigation();
 
     scheduleRender();
     maybeQueryOSM();
@@ -650,6 +835,214 @@
     scheduleRender();
   }
 
+  // ——— Search (Nominatim) + routing (OSRM), both keyless ———
+  const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+  const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
+
+  const escapeHtml = s => String(s).replace(/[&<>"]/g,
+    c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 2500);
+  }
+
+  function openMenu(show) {
+    const open = show == null ? els.menu.classList.contains('hidden') : show;
+    els.menu.classList.toggle('hidden', !open);
+    els.miStop.classList.toggle('hidden', !state.nav);
+  }
+  function openSearch() {
+    openMenu(false);
+    els.search.classList.remove('hidden');
+    els.searchInput.value = '';
+    els.searchResults.innerHTML = '';
+    setTimeout(() => els.searchInput.focus(), 60);
+  }
+  function closeSearch() {
+    els.search.classList.add('hidden');
+    els.searchInput.blur();
+  }
+
+  async function runSearch(q) {
+    if (!q || q.trim().length < 3) { els.searchResults.innerHTML = ''; return; }
+    els.searchResults.innerHTML = '<div class="sr-note">Searching...</div>';
+    try {
+      const url = new URL(NOMINATIM);
+      url.searchParams.set('q', q);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('limit', '6');
+      url.searchParams.set('addressdetails', '1');
+      if (state.lat != null) {
+        const d = 0.6; // bias toward, but don't restrict to, the area around us
+        url.searchParams.set('viewbox', `${state.lon - d},${state.lat + d},${state.lon + d},${state.lat - d}`);
+        url.searchParams.set('bounded', '0');
+      }
+      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!r.ok) throw new Error('search ' + r.status);
+      renderResults(await r.json());
+    } catch (e) {
+      els.searchResults.innerHTML = '<div class="sr-note">Search failed. Try again.</div>';
+    }
+  }
+
+  function renderResults(data) {
+    if (!data || !data.length) { els.searchResults.innerHTML = '<div class="sr-note">No matches.</div>'; return; }
+    els.searchResults.innerHTML = '';
+    data.forEach(item => {
+      const parts = (item.display_name || 'Unknown').split(', ');
+      const div = document.createElement('div');
+      div.className = 'sr-item';
+      div.innerHTML = `<div class="sr-title">${escapeHtml(parts[0])}</div>` +
+        `<div class="sr-sub">${escapeHtml(parts.slice(1, 4).join(', '))}</div>`;
+      div.addEventListener('click', () => {
+        closeSearch();
+        startRoute(parseFloat(item.lat), parseFloat(item.lon), parts[0]);
+      });
+      els.searchResults.appendChild(div);
+    });
+  }
+
+  async function startRoute(dlat, dlon, label) {
+    if (state.lat == null) { toast('Waiting for GPS...'); return; }
+    toast('Finding route...');
+    const route = await fetchRoute(state.lat, state.lon, dlat, dlon);
+    if (!route) { toast('No route found'); return; }
+    state.nav = {
+      dest: { lat: dlat, lon: dlon, label: label || 'Destination' },
+      steps: route.steps, geometry: route.geometry,
+      idx: 0, totalDist: route.distance, totalDur: route.duration,
+      distToTurn: 0, remDist: route.distance, remDur: route.duration,
+      arrived: false, offCount: 0, rerouting: false, exitTimer: null,
+    };
+    updateNavigation();
+    scheduleRender();
+  }
+
+  async function fetchRoute(slat, slon, dlat, dlon) {
+    try {
+      const url = OSRM + `${slon},${slat};${dlon},${dlat}` +
+        '?overview=full&geometries=geojson&steps=true&annotations=false';
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 12000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (!r.ok) return null;
+      const data = await r.json();
+      if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+      const rt = data.routes[0];
+      const geometry = (rt.geometry.coordinates || []).map(c => ({ lat: c[1], lon: c[0] }));
+      const steps = (rt.legs[0].steps || []).map(s => {
+        const m = s.maneuver;
+        return {
+          lat: m.location[1], lon: m.location[0],
+          dist: s.distance || 0,
+          instr: maneuverText(m, s.name || ''),
+          arrow: maneuverArrow(m),
+        };
+      });
+      return { steps, geometry, distance: rt.distance, duration: rt.duration };
+    } catch (e) { return null; }
+  }
+
+  function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+  function maneuverText(m, road) {
+    const mod = m.modifier || '';
+    const onto = road ? ' onto ' + road : '';
+    switch (m.type) {
+      case 'depart': return road ? 'Head out on ' + road : 'Start driving';
+      case 'turn':
+      case 'end of road': return 'Turn ' + (mod || 'ahead') + onto;
+      case 'merge': return 'Merge' + (mod ? ' ' + mod : '') + onto;
+      case 'on ramp': return 'Take the ramp' + onto;
+      case 'off ramp': return 'Take the exit' + onto;
+      case 'fork': return 'Keep ' + (mod || 'straight') + onto;
+      case 'continue': return 'Continue' + (mod && mod !== 'straight' ? ' ' + mod : '') + onto;
+      case 'roundabout':
+      case 'rotary': return 'Enter the roundabout' + (m.exit ? ', exit ' + m.exit : '');
+      case 'new name': return 'Continue' + onto;
+      case 'arrive': return road ? 'Arrive at ' + road : 'Arrive at destination';
+      default: return mod ? cap(mod) + onto : 'Continue' + onto;
+    }
+  }
+  function maneuverArrow(m) {
+    if (m.type === 'arrive') return '◉';
+    if (m.type === 'roundabout' || m.type === 'rotary') return '↻';
+    switch (m.modifier) {
+      case 'left': case 'sharp left': return '←';
+      case 'slight left': return '↖';
+      case 'right': case 'sharp right': return '→';
+      case 'slight right': return '↗';
+      case 'uturn': return '↩';
+      default: return '↑';
+    }
+  }
+
+  function fmtDist(m) {
+    const ft = m * M_TO_FT;
+    if (ft >= 1000) return (ft / FT_PER_MI).toFixed(1) + ' mi';
+    return Math.max(0, Math.round(ft / 10) * 10) + ' ft';
+  }
+
+  function stopNav() {
+    if (state.nav && state.nav.exitTimer) clearTimeout(state.nav.exitTimer);
+    state.nav = null;
+    scheduleRender();
+  }
+
+  function reroute() {
+    const nav = state.nav;
+    if (!nav) return;
+    nav.rerouting = true;
+    toast('Rerouting...');
+    fetchRoute(state.lat, state.lon, nav.dest.lat, nav.dest.lon).then(route => {
+      if (!state.nav) return;
+      state.nav.rerouting = false;
+      if (route) {
+        Object.assign(state.nav, {
+          steps: route.steps, geometry: route.geometry, idx: 0,
+          totalDist: route.distance, totalDur: route.duration, offCount: 0,
+        });
+        updateNavigation();
+        scheduleRender();
+      }
+    });
+  }
+
+  function nearestRouteDist(lat, lon, geom) {
+    let min = Infinity;
+    for (let i = 0; i < geom.length; i++) {
+      const d = haversine(lat, lon, geom[i].lat, geom[i].lon);
+      if (d < min) min = d;
+    }
+    return min;
+  }
+
+  function updateNavigation() {
+    const nav = state.nav;
+    if (!nav || state.lat == null) return;
+    const steps = nav.steps;
+    let stp = steps[nav.idx];
+    if (!stp) return;
+    let dMan = haversine(state.lat, state.lon, stp.lat, stp.lon);
+    while (nav.idx < steps.length - 1 && dMan < 25) {
+      nav.idx++; stp = steps[nav.idx];
+      dMan = haversine(state.lat, state.lon, stp.lat, stp.lon);
+    }
+    nav.distToTurn = dMan;
+    let rem = dMan;
+    for (let i = nav.idx + 1; i < steps.length; i++) rem += steps[i].dist;
+    nav.remDist = rem;
+    nav.remDur = nav.totalDist > 0 ? nav.totalDur * (rem / nav.totalDist) : 0;
+    const dDest = haversine(state.lat, state.lon, nav.dest.lat, nav.dest.lon);
+    if (nav.idx >= steps.length - 1 && dDest < 30) nav.arrived = true;
+    const off = nearestRouteDist(state.lat, state.lon, nav.geometry);
+    nav.offCount = off > 60 ? (nav.offCount || 0) + 1 : 0;
+    if (nav.offCount >= 2 && !nav.rerouting && !nav.arrived) reroute();
+  }
+
   // ——— Error display ———
   function showError(msg) {
     els.hud.classList.add('hidden');
@@ -704,12 +1097,37 @@
         start();
       }
     } else if (e.key === 'Escape') {
-      // No-op on glasses (no back nav), but harmless
+      if (!els.search.classList.contains('hidden')) closeSearch();
+      else if (!els.menu.classList.contains('hidden')) openMenu(false);
     }
   });
 
   els.startBtn.addEventListener('click', start);
   window.addEventListener('load', () => els.startBtn.focus());
+
+  // ——— Menu + search wiring ———
+  els.menuBtn.addEventListener('click', e => { e.stopPropagation(); openMenu(); });
+  els.miSearch.addEventListener('click', e => { e.stopPropagation(); openSearch(); });
+  els.miStop.addEventListener('click', e => { e.stopPropagation(); stopNav(); openMenu(false); });
+  els.miRestart.addEventListener('click', e => { e.stopPropagation(); openMenu(false); start(); });
+  els.miPerms.addEventListener('click', e => { e.stopPropagation(); openMenu(false); start(); });
+  els.searchClose.addEventListener('click', e => { e.stopPropagation(); closeSearch(); });
+  els.searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = els.searchInput.value;
+    searchTimer = setTimeout(() => runSearch(q), 500);
+  });
+  els.searchInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); runSearch(els.searchInput.value); }
+  });
+  // Tap outside the menu closes it.
+  document.addEventListener('click', e => {
+    if (!els.menu.classList.contains('hidden') &&
+        !els.menu.contains(e.target) && !els.menuBtn.contains(e.target)) {
+      openMenu(false);
+    }
+  });
 
   // Re-render every 500ms while running so distance counts down smoothly
   // even between GPS fixes. Cheap because render() short-circuits on
