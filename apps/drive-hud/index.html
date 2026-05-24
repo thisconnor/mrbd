@@ -121,6 +121,101 @@
     background: transparent;
     min-height: 96px;
     max-width: 420px;
+    color: #fff;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  }
+  .maneuver:focus {
+    outline: none;
+    border-color: #fff;
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 22px rgba(255,255,255,0.18);
+  }
+  .maneuver.rerouting {
+    border-color: rgba(255,200,80,0.7);
+    box-shadow: 0 0 18px rgba(255,200,80,0.2);
+  }
+  .maneuver.rerouting .maneuver-icon {
+    opacity: 0.6;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+
+  /* Trip info overlay */
+  .trip-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px 40px;
+  }
+  .trip-dist {
+    font-size: 110px;
+    font-weight: 100;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .trip-time {
+    font-size: 24px;
+    font-weight: 300;
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+    margin-top: 10px;
+  }
+  .trip-dest {
+    font-size: 17px;
+    opacity: 0.5;
+    margin-top: 36px;
+    max-width: 480px;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+    font-weight: 400;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .trip-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    padding-bottom: 28px;
+  }
+  .pill-btn {
+    min-height: 88px;
+    min-width: 180px;
+    padding: 18px 36px;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: inherit;
+    color: #fff;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    border-radius: 100px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 120ms, border-color 120ms, box-shadow 120ms, color 120ms;
+  }
+  .pill-btn:focus {
+    outline: none;
+    background: rgba(255,255,255,0.1);
+    border-color: #fff;
+    box-shadow: 0 0 22px rgba(255,255,255,0.2);
+  }
+  .pill-btn.danger {
+    color: rgba(255, 138, 138, 0.95);
+    border-color: rgba(255, 100, 100, 0.45);
+  }
+  .pill-btn.danger:focus {
+    background: rgba(255, 68, 68, 0.14);
+    border-color: #ff4444;
+    color: #ff4444;
+    box-shadow: 0 0 22px rgba(255, 68, 68, 0.3);
   }
   .maneuver-icon {
     font-size: 56px;
@@ -422,14 +517,14 @@
     </div>
 
     <div class="bottom idle" id="bottom">
-      <!-- Maneuver card: visible only when navigating -->
-      <div class="maneuver hidden" id="maneuver">
+      <!-- Maneuver card: visible only when navigating. Clickable to open trip info. -->
+      <button class="maneuver hidden" id="maneuver" aria-label="Trip info">
         <div class="maneuver-icon" id="maneuverIcon">↑</div>
         <div class="maneuver-stack">
           <div class="maneuver-dist" id="maneuverDist">—</div>
           <div class="maneuver-street" id="maneuverStreet">—</div>
         </div>
-      </div>
+      </button>
 
       <!-- Search icon (idle + nav). Becomes "end" icon when navigating. -->
       <button class="icon-btn" id="searchBtn" aria-label="Search destination">
@@ -465,6 +560,19 @@
     <div class="results-list" id="resultsList"></div>
   </div>
 
+  <!-- Trip info overlay -->
+  <div class="overlay hidden" id="tripOverlay">
+    <div class="trip-content">
+      <div class="trip-dist" id="tripDist">— mi</div>
+      <div class="trip-time" id="tripTime">— min</div>
+      <div class="trip-dest" id="tripDest">Destination</div>
+    </div>
+    <div class="trip-actions">
+      <button class="pill-btn danger" id="endRouteBtn">End route</button>
+      <button class="pill-btn" id="resumeBtn">Resume</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -481,7 +589,7 @@
 
   // ===== State =====
   const state = {
-    mode: 'idle',          // 'idle' | 'searching' | 'picking' | 'navigating'
+    mode: 'idle',          // 'idle' | 'searching' | 'picking' | 'navigating' | 'trip-info'
     lat: null, lon: null,
     speed: 0, rawSpeed: 0,
     gpsHeading: null,
@@ -491,8 +599,10 @@
     query: '',
     results: [],
     // Routing
-    route: null,           // { steps: [...], destination: {lat,lon,label} }
+    route: null,           // { steps, coordinates, destination, totalMeters, totalSeconds }
     stepIdx: 0,
+    rerouting: false,
+    offRouteCount: 0,
   };
   let lastPos = null;
 
@@ -517,6 +627,12 @@
     resultsTitle: $('resultsTitle'),
     resultsBackBtn: $('resultsBackBtn'),
     resultsList: $('resultsList'),
+    tripOverlay: $('tripOverlay'),
+    tripDist: $('tripDist'),
+    tripTime: $('tripTime'),
+    tripDest: $('tripDest'),
+    endRouteBtn: $('endRouteBtn'),
+    resumeBtn: $('resumeBtn'),
   };
 
   // ===== Math helpers =====
@@ -537,6 +653,52 @@
     if (ft >= 1000) return (ft / FT_PER_MI).toFixed(ft >= FT_PER_MI * 10 ? 0 : 1) + ' mi';
     return Math.round(ft / 10) * 10 + ' ft';
   }
+  function formatTime(seconds) {
+    if (seconds < 60) return Math.max(0, Math.round(seconds)) + ' sec';
+    const totalMin = Math.round(seconds / 60);
+    if (totalMin < 60) return totalMin + ' min';
+    const hrs = Math.floor(totalMin / 60);
+    const mins = totalMin % 60;
+    return hrs + ' hr' + (mins > 0 ? ' ' + mins + ' min' : '');
+  }
+  // Point-to-segment distance with equirectangular approximation (fast & fine
+  // at small scales). Coords are [lon, lat]. Returns meters.
+  function pointToRouteDist(lat, lon, coords) {
+    if (!coords || coords.length < 2) return Infinity;
+    const cosLat = Math.cos(lat * Math.PI / 180);
+    const px = lon * cosLat, py = lat;
+    let minD2 = Infinity;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const ax = coords[i][0] * cosLat, ay = coords[i][1];
+      const bx = coords[i+1][0] * cosLat, by = coords[i+1][1];
+      const dx = bx - ax, dy = by - ay;
+      const len2 = dx*dx + dy*dy;
+      let t = len2 > 0 ? ((px-ax)*dx + (py-ay)*dy) / len2 : 0;
+      if (t < 0) t = 0; else if (t > 1) t = 1;
+      const ex = ax + t*dx, ey = ay + t*dy;
+      const ddx = px - ex, ddy = py - ey;
+      const d2 = ddx*ddx + ddy*ddy;
+      if (d2 < minD2) minD2 = d2;
+    }
+    return Math.sqrt(minD2) * 111320; // degrees → meters
+  }
+  function computeRemaining() {
+    if (!state.route) return { meters: 0, seconds: 0 };
+    const steps = state.route.steps;
+    let m = 0, s = 0;
+    for (let i = state.stepIdx; i < steps.length; i++) {
+      if (i === state.stepIdx) {
+        m += steps[i].remainingMeters || 0;
+        const frac = steps[i].distanceM > 0
+          ? (steps[i].remainingMeters || 0) / steps[i].distanceM : 0;
+        s += (steps[i].durationS || 0) * frac;
+      } else {
+        m += steps[i].distanceM || 0;
+        s += steps[i].durationS || 0;
+      }
+    }
+    return { meters: m, seconds: s };
+  }
 
   // ===== Render (rAF batched, value-gated) =====
   let pending = false;
@@ -544,6 +706,8 @@
     speedInt:-1, limit:'_', cardinal:'_',
     over:null, limitState:'_',
     manDist:'_', manStreet:'_', manIcon:'_',
+    rerouting: null,
+    tripDist:'_', tripTime:'_', tripDest:'_',
   };
   function scheduleRender() {
     if (pending) return;
@@ -577,22 +741,43 @@
     let cardDim = true;
     if (state.gpsHeading != null) {
       cardTxt = cardinal(state.gpsHeading);
-      cardDim = state.speed < 1.5; // dim when stationary, last value persists
+      cardDim = state.speed < 1.5;
     }
     if (cardTxt !== last.cardinal) { els.cardinal.textContent = cardTxt; last.cardinal = cardTxt; }
     els.cardinal.classList.toggle('dim', cardDim);
 
     // Maneuver (only when navigating)
-    if (state.mode === 'navigating' && state.route) {
-      const step = state.route.steps[state.stepIdx];
-      if (step) {
-        const dist = formatDistance(step.remainingMeters);
-        if (dist !== last.manDist) { els.maneuverDist.textContent = dist; last.manDist = dist; }
-        const street = step.streetName || '—';
-        if (street !== last.manStreet) { els.maneuverStreet.textContent = street; last.manStreet = street; }
-        const icon = step.icon;
-        if (icon !== last.manIcon) { els.maneuverIcon.textContent = icon; last.manIcon = icon; }
+    if ((state.mode === 'navigating' || state.mode === 'trip-info') && state.route) {
+      if (state.rerouting !== last.rerouting) {
+        els.maneuver.classList.toggle('rerouting', state.rerouting);
+        last.rerouting = state.rerouting;
       }
+      if (state.rerouting) {
+        if (last.manDist !== '...') { els.maneuverDist.textContent = '...'; last.manDist = '...'; }
+        if (last.manStreet !== 'recalculating') { els.maneuverStreet.textContent = 'recalculating'; last.manStreet = 'recalculating'; }
+        if (last.manIcon !== '↻') { els.maneuverIcon.textContent = '↻'; last.manIcon = '↻'; }
+      } else {
+        const step = state.route.steps[state.stepIdx];
+        if (step) {
+          const dist = formatDistance(step.remainingMeters);
+          if (dist !== last.manDist) { els.maneuverDist.textContent = dist; last.manDist = dist; }
+          const street = step.streetName || '—';
+          if (street !== last.manStreet) { els.maneuverStreet.textContent = street; last.manStreet = street; }
+          const icon = step.icon;
+          if (icon !== last.manIcon) { els.maneuverIcon.textContent = icon; last.manIcon = icon; }
+        }
+      }
+    }
+
+    // Trip info overlay
+    if (state.mode === 'trip-info' && state.route) {
+      const rem = computeRemaining();
+      const dTxt = formatDistance(rem.meters);
+      if (dTxt !== last.tripDist) { els.tripDist.textContent = dTxt; last.tripDist = dTxt; }
+      const tTxt = formatTime(rem.seconds);
+      if (tTxt !== last.tripTime) { els.tripTime.textContent = tTxt; last.tripTime = tTxt; }
+      const dest = state.route.destination.label || 'Destination';
+      if (dest !== last.tripDest) { els.tripDest.textContent = dest; last.tripDest = dest; }
     }
   }
 
@@ -603,30 +788,27 @@
     els.bottom.classList.toggle('idle', m === 'idle');
     els.maneuver.classList.toggle('hidden', m !== 'navigating');
 
-    // Update search icon
-    if (m === 'navigating') {
-      // Becomes "end nav" — keep the same icon since it always opens search,
-      // but you can stop nav by selecting a new destination or refresh.
-    }
-
     // Show/hide overlays
     els.searchOverlay.classList.toggle('hidden', m !== 'searching');
     els.resultsOverlay.classList.toggle('hidden', m !== 'picking');
-    els.hud.classList.toggle('hidden', m !== 'idle' && m !== 'navigating');
+    els.tripOverlay.classList.toggle('hidden', m !== 'trip-info');
+    els.hud.classList.toggle('hidden', !(m === 'idle' || m === 'navigating'));
 
     // Default focus per mode
-    if (m === 'idle' || m === 'navigating') {
+    if (m === 'idle') {
       els.searchBtn.focus();
+    } else if (m === 'navigating') {
+      els.maneuver.focus();
     } else if (m === 'searching') {
-      // Focus first letter key (a position 'q' if present, else first key)
       const firstKey = els.keyboard.querySelector('[data-key="q"]') ||
                        els.keyboard.querySelector('.key');
       if (firstKey) firstKey.focus();
-      // Show caret
       els.caret.classList.remove('hidden');
     } else if (m === 'picking') {
       const first = els.resultsList.querySelector('.result-item');
       if (first) first.focus();
+    } else if (m === 'trip-info') {
+      els.resumeBtn.focus();
     }
     if (m !== 'searching') els.caret.classList.add('hidden');
     scheduleRender();
@@ -848,6 +1030,52 @@
   }
 
   // ===== OSRM routing =====
+  // Returns true if route built and applied, false on failure.
+  async function fetchAndApplyRoute(fromLat, fromLon, toLat, toLon, label) {
+    const url = `${OSRM}/${fromLon},${fromLat};${toLon},${toLat}` +
+      '?overview=simplified&geometries=geojson&steps=true&annotations=false';
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 10000);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (!data.routes || !data.routes.length) return false;
+      const route = data.routes[0];
+      const steps = [];
+      for (const leg of route.legs) {
+        for (const s of leg.steps) {
+          steps.push({
+            lat: s.maneuver.location[1],
+            lon: s.maneuver.location[0],
+            type: s.maneuver.type,
+            modifier: s.maneuver.modifier || '',
+            distanceM: s.distance,
+            durationS: s.duration,
+            remainingMeters: s.distance,
+            streetName: s.name || (s.ref || ''),
+            icon: maneuverIcon(s.maneuver.type, s.maneuver.modifier),
+          });
+        }
+      }
+      state.route = {
+        steps,
+        coordinates: (route.geometry && route.geometry.coordinates) || [],
+        destination: { lat: toLat, lon: toLon, label: label || (state.route && state.route.destination.label) || 'Destination' },
+        totalMeters: route.distance,
+        totalSeconds: route.duration,
+      };
+      state.stepIdx = 0;
+      state.offRouteCount = 0;
+      return true;
+    } catch (e) {
+      clearTimeout(to);
+      console.warn('OSRM failed:', e);
+      return false;
+    }
+  }
+
   async function selectResult(r) {
     const destLat = parseFloat(r.lat);
     const destLon = parseFloat(r.lon);
@@ -860,47 +1088,29 @@
     }
     setStatus(els.resultsList, 'Routing...', 'Building turn-by-turn directions.');
 
-    const url = `${OSRM}/${state.lon},${state.lat};${destLon},${destLat}` +
-      '?overview=false&steps=true&annotations=false';
-
-    try {
-      const ctrl = new AbortController();
-      const to = setTimeout(() => ctrl.abort(), 10000);
-      const r2 = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(to);
-      if (!r2.ok) throw new Error('HTTP ' + r2.status);
-      const data = await r2.json();
-      if (!data.routes || !data.routes.length) {
-        setStatus(els.resultsList, 'No route',
-          'Couldn’t build a route to that destination.');
-        return;
-      }
-      const route = data.routes[0];
-      const steps = [];
-      for (const leg of route.legs) {
-        for (const s of leg.steps) {
-          steps.push({
-            lat: s.maneuver.location[1],
-            lon: s.maneuver.location[0],
-            type: s.maneuver.type,
-            modifier: s.maneuver.modifier || '',
-            distanceM: s.distance,
-            remainingMeters: s.distance,
-            streetName: s.name || (s.ref || ''),
-            icon: maneuverIcon(s.maneuver.type, s.maneuver.modifier),
-          });
-        }
-      }
-      // Add a synthetic "arrive" if last step isn't already
-      state.route = { steps, destination: { lat: destLat, lon: destLon, label } };
-      state.stepIdx = 0;
-      setMode('navigating');
-      updateNavProgress();
-    } catch (e) {
-      console.warn('OSRM failed:', e);
-      setStatus(els.resultsList, 'Routing failed',
-        'Check your connection and try again.');
+    const ok = await fetchAndApplyRoute(state.lat, state.lon, destLat, destLon, label);
+    if (!ok) {
+      setStatus(els.resultsList, 'No route',
+        'Couldn\u2019t build a route to that destination.');
+      return;
     }
+    setMode('navigating');
+    updateNavProgress();
+  }
+
+  // ===== Reroute when off-route =====
+  async function reroute() {
+    if (!state.route || state.rerouting || state.lat == null) return;
+    state.rerouting = true;
+    scheduleRender();
+    const dest = state.route.destination;
+    const ok = await fetchAndApplyRoute(state.lat, state.lon, dest.lat, dest.lon, dest.label);
+    state.rerouting = false;
+    if (!ok) {
+      // Soft-fail: keep old route, reset counter so we don't hammer the API
+      state.offRouteCount = 0;
+    }
+    scheduleRender();
   }
 
   // Map OSRM maneuver to a simple unicode arrow
@@ -930,40 +1140,52 @@
   // ===== Nav progress: advance step when user passes the maneuver point =====
   function updateNavProgress() {
     if (!state.route) return;
+    if (state.rerouting) return; // skip checks during reroute
+
     const steps = state.route.steps;
     if (state.stepIdx >= steps.length) return;
 
-    // Distance from user to the *target* of the current step (next maneuver point).
-    // OSRM step.maneuver.location is the START of the step, so the relevant point
-    // for "distance until you turn" is the START of the *next* step.
+    // Off-route detection: distance from user to the route polyline.
+    // 3 consecutive samples > 60m triggers a reroute. Cheap: ~50-300 segments,
+    // checked on each GPS fix (~1Hz).
+    if (state.route.coordinates && state.route.coordinates.length > 1) {
+      const offDist = pointToRouteDist(state.lat, state.lon, state.route.coordinates);
+      if (offDist > 60) {
+        state.offRouteCount++;
+        if (state.offRouteCount >= 3) {
+          reroute();
+          return;
+        }
+      } else {
+        state.offRouteCount = 0;
+      }
+    }
+
+    // Distance to next maneuver point (start of NEXT step, i.e. where you turn)
     const nextStep = steps[state.stepIdx + 1] || steps[steps.length - 1];
     const d = haversine(state.lat, state.lon, nextStep.lat, nextStep.lon);
 
-    // Advance if we've passed the next maneuver point
     if (d < 20 && state.stepIdx + 1 < steps.length) {
       state.stepIdx++;
-      // Recompute remaining
       const after = steps[state.stepIdx + 1] || steps[steps.length - 1];
       steps[state.stepIdx].remainingMeters =
         haversine(state.lat, state.lon, after.lat, after.lon);
     } else {
-      // Just update remainingMeters live so the distance counts down
       steps[state.stepIdx].remainingMeters = d;
     }
 
-    // Arrive: last step reached and within 30m of destination
+    // Arrived
     if (state.stepIdx === steps.length - 1) {
       const dest = state.route.destination;
       const dDest = haversine(state.lat, state.lon, dest.lat, dest.lon);
       if (dDest < 30) {
-        // Show arrived state for a moment, then back to idle
         steps[state.stepIdx].icon = '⦿';
         steps[state.stepIdx].streetName = dest.label || 'Arrived';
         steps[state.stepIdx].remainingMeters = 0;
         setTimeout(() => {
           state.route = null;
           state.stepIdx = 0;
-          setMode('idle');
+          if (state.mode === 'navigating' || state.mode === 'trip-info') setMode('idle');
         }, 6000);
       }
     }
@@ -1013,10 +1235,19 @@
     setMode(state.route ? 'navigating' : 'idle');
   });
   els.resultsBackBtn.addEventListener('click', () => setMode('searching'));
+  els.maneuver.addEventListener('click', () => {
+    if (state.route) setMode('trip-info');
+  });
+  els.resumeBtn.addEventListener('click', () => setMode('navigating'));
+  els.endRouteBtn.addEventListener('click', () => {
+    state.route = null;
+    state.stepIdx = 0;
+    state.offRouteCount = 0;
+    state.rerouting = false;
+    setMode('idle');
+  });
 
   // ===== D-pad input handling =====
-  // Strategy: arrow keys move focus among the focusable elements in the current
-  // overlay using spatial proximity (rect centers). Enter activates focused.
   function focusables() {
     if (state.mode === 'searching') {
       return Array.from(document.querySelectorAll('#searchOverlay .key, #searchOverlay .small-btn'));
@@ -1024,8 +1255,14 @@
     if (state.mode === 'picking') {
       return Array.from(document.querySelectorAll('#resultsOverlay .result-item, #resultsOverlay .small-btn'));
     }
-    if (state.mode === 'idle' || state.mode === 'navigating') {
-      return [els.searchBtn]; // single focusable on HUD
+    if (state.mode === 'trip-info') {
+      return [els.endRouteBtn, els.resumeBtn];
+    }
+    if (state.mode === 'navigating') {
+      return [els.maneuver, els.searchBtn];
+    }
+    if (state.mode === 'idle') {
+      return [els.searchBtn];
     }
     return [];
   }
@@ -1092,6 +1329,7 @@
       case 'Escape':
         if (state.mode === 'searching') els.cancelBtn.click();
         else if (state.mode === 'picking') els.resultsBackBtn.click();
+        else if (state.mode === 'trip-info') els.resumeBtn.click();
         e.preventDefault();
         break;
     }
@@ -1101,7 +1339,8 @@
 
   // Re-render twice a second so live distance counts down between GPS fixes
   setInterval(() => {
-    if (state.mode === 'navigating' && state.route && state.lat != null) {
+    if ((state.mode === 'navigating' || state.mode === 'trip-info') &&
+        state.route && state.lat != null) {
       updateNavProgress();
       scheduleRender();
     }
