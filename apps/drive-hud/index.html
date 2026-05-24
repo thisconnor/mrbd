@@ -24,26 +24,11 @@
   .stage { position:relative; width:600px; height:600px; }
   .hidden { display: none !important; }
 
-  /* ——— Top bar: cardinal (left) + speed limit (right) ——— */
-  .top {
-    position:absolute; top:0; left:0; right:0;
-    display:flex; justify-content:space-between; align-items:flex-start;
-    padding: 36px 40px 0 44px;
-  }
-  .cardinal {
-    font-size: 44px;
-    font-weight: 200;
-    letter-spacing: 0.04em;
-    opacity: 0.85;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    margin-top: 18px;
-    min-width: 80px;
-  }
-  .cardinal.dim { opacity: 0.35; }
-
-  /* Speed limit sign */
+  /* ——— Speed limit sign (centered in right area, beside speedometer) ——— */
   .limit {
+    position: absolute;
+    top: 36px;
+    left: 414px;
     width: 132px; height: 168px;
     border: 2.5px solid #fff;
     border-radius: 18px;
@@ -77,11 +62,14 @@
   }
   .limit.over .limit-val { color: #ff4444; }
 
-  /* ——— Center: speedometer ——— */
+  /* ——— Speedometer column: fixed 340px width so triple-digit speeds never
+         clip, and so MPH + search icon below center on the same vertical
+         line regardless of how wide the speed digits are. ——— */
   .speed-wrap {
     position:absolute;
-    top:50%; left:50%;
-    transform: translate(-50%, -50%);
+    top:50%; left:24px;
+    width: 340px;
+    transform: translateY(-50%);
     text-align:center;
     line-height: 1;
   }
@@ -98,18 +86,21 @@
     letter-spacing: 0.35em;
     margin-top: 18px;
     opacity: 0.85;
-    text-indent: 0.35em;
+    text-indent: 0.35em; /* optical centering: pulls track-spaced text back to center */
   }
   .speed.over { color: #ff4444; }
 
-  /* ——— Bottom area ——— */
+  /* ——— Bottom row: shares the same 340px column as the speedometer so the
+         search icon (idle) and maneuver card (navigating) sit on the same
+         vertical center line as the speed digits and MPH above. ——— */
   .bottom {
     position:absolute;
-    left:40px; right:40px; bottom: 32px;
-    display:flex; align-items:center; justify-content:space-between;
+    bottom: 32px;
+    left: 24px;
+    width: 340px;
+    display:flex; align-items:center; justify-content:center;
     gap: 18px;
   }
-  .bottom.idle { justify-content: center; }
 
   /* Maneuver card (navigation mode) */
   .maneuver {
@@ -120,7 +111,7 @@
     border-radius: 22px;
     background: transparent;
     min-height: 96px;
-    max-width: 420px;
+    max-width: 340px;
     color: #fff;
     font-family: inherit;
     text-align: left;
@@ -497,18 +488,15 @@
   <!-- Permission gate -->
   <div class="gate" id="gate">
     <h1>Drive HUD</h1>
-    <p>Live speed, posted limit, heading, and on-demand turn-by-turn navigation. Needs location access.</p>
+    <p>Live speed, posted limit, and on-demand turn-by-turn navigation. Needs location access.</p>
     <button id="startBtn">Start</button>
   </div>
 
   <!-- Main HUD -->
   <div class="hidden" id="hud">
-    <div class="top">
-      <div class="cardinal dim" id="cardinal">—</div>
-      <div class="limit dim" id="limit">
-        <div class="limit-label">SPEED<br>LIMIT</div>
-        <div class="limit-val" id="limitVal">—</div>
-      </div>
+    <div class="limit dim" id="limit">
+      <div class="limit-label">SPEED<br>LIMIT</div>
+      <div class="limit-val" id="limitVal">—</div>
     </div>
 
     <div class="speed-wrap">
@@ -592,7 +580,6 @@
     mode: 'idle',          // 'idle' | 'searching' | 'picking' | 'navigating' | 'trip-info'
     lat: null, lon: null,
     speed: 0, rawSpeed: 0,
-    gpsHeading: null,
     speedLimit: null,
     lastOSMt: 0, lastOSMLat: null, lastOSMLon: null,
     // Search
@@ -611,7 +598,6 @@
   const els = {
     gate: $('gate'), startBtn: $('startBtn'),
     hud: $('hud'), bottom: $('bottom'),
-    cardinal: $('cardinal'),
     speed: $('speed'),
     limit: $('limit'), limitVal: $('limitVal'),
     searchBtn: $('searchBtn'),
@@ -643,10 +629,6 @@
     const dλ = (lon2 - lon1) * Math.PI/180;
     const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-  function cardinal(deg) {
-    const d = ['N','NE','E','SE','S','SW','W','NW'];
-    return d[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
   }
   function formatDistance(meters) {
     const ft = meters * M_TO_FT;
@@ -703,7 +685,7 @@
   // ===== Render (rAF batched, value-gated) =====
   let pending = false;
   const last = {
-    speedInt:-1, limit:'_', cardinal:'_',
+    speedInt:-1, limit:'_',
     over:null, limitState:'_',
     manDist:'_', manStreet:'_', manIcon:'_',
     rerouting: null,
@@ -735,16 +717,6 @@
     }
     const limitTxt = state.speedLimit == null ? '—' : String(state.speedLimit);
     if (limitTxt !== last.limit) { els.limitVal.textContent = limitTxt; last.limit = limitTxt; }
-
-    // Cardinal (GPS heading only, persisted)
-    let cardTxt = '—';
-    let cardDim = true;
-    if (state.gpsHeading != null) {
-      cardTxt = cardinal(state.gpsHeading);
-      cardDim = state.speed < 1.5;
-    }
-    if (cardTxt !== last.cardinal) { els.cardinal.textContent = cardTxt; last.cardinal = cardTxt; }
-    els.cardinal.classList.toggle('dim', cardDim);
 
     // Maneuver (only when navigating)
     if ((state.mode === 'navigating' || state.mode === 'trip-info') && state.route) {
@@ -784,8 +756,6 @@
   // ===== Mode switching =====
   function setMode(m) {
     state.mode = m;
-    // Update bottom layout
-    els.bottom.classList.toggle('idle', m === 'idle');
     els.maneuver.classList.toggle('hidden', m !== 'navigating');
 
     // Show/hide overlays
@@ -817,7 +787,7 @@
   // ===== Geolocation =====
   function onPosition(pos) {
     const t = pos.timestamp || Date.now();
-    const { latitude, longitude, speed, heading } = pos.coords;
+    const { latitude, longitude, speed } = pos.coords;
     state.lat = latitude; state.lon = longitude;
 
     let newSpeed;
@@ -830,7 +800,6 @@
     state.rawSpeed = newSpeed;
     state.speed = state.speed * 0.55 + newSpeed * 0.45;
 
-    if (heading != null && !isNaN(heading) && state.speed > 1.5) state.gpsHeading = heading;
     lastPos = { lat: latitude, lon: longitude, t };
 
     // Update nav progress if navigating
