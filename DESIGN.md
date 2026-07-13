@@ -6,9 +6,10 @@ Reuse it for any app where live data is the whole point (speed, time, distance,
 counts, status).
 
 > Note: this is **not** the same as `shared/mrbd.css`. That stylesheet is the
-> cyan-on-navy *playground hub* theme (cards, accents, gradients) used by the
-> landing page and the scaffold template. The instrument style below is
-> self-contained per app — pure black/white, no shared CSS, no chrome.
+> cyan-on-navy *playground* theme (cards, accents, gradients) used by the
+> scaffold template and some early apps. The instrument style below is
+> self-contained per page — pure black/white, no shared CSS, no chrome — and
+> is also what the landing page (`index.html`, the on-glasses launcher) uses.
 
 ## Principles
 
