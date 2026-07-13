@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+<meta name="mrbd-web-app-capable" content="yes">
+<title>Poker HUD</title>
+<link rel="icon" href="data:,">
+<style>
+  /* ————————————————————————————————————————————————————————————————
+     Poker HUD — live Texas Hold'em odds for the Meta Ray-Ban Display.
+     Additive display rules: page #000 reads as transparent, surfaces are
+     dark felt green, ink is white, selection is gold. Input is the Neural
+     Band set the glasses forward to web apps: arrows + pinch (Enter).
+     ———————————————————————————————————————————————————————————————— */
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:600px; height:600px; overflow:hidden;
+    background:#000; color:#eef2ec;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro",
+                 "Helvetica Neue", system-ui, sans-serif;
+    font-weight:300;
+    user-select:none; -webkit-user-select:none;
+  }
+  button { font-family:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+  .hidden { display:none !important; }
+
+  .stage {
+    position:relative; width:600px; height:600px;
+    padding:16px 26px 10px;
+    display:flex; flex-direction:column;
+    background:
+      radial-gradient(115% 80% at 50% -4%,
+        rgba(26, 74, 49, 0.50), rgba(12, 34, 22, 0.28) 55%, rgba(0,0,0,0) 82%);
+  }
+
+  /* ——— shared bits ——— */
+  .klabel {
+    font-size:11px; font-weight:600; letter-spacing:0.2em;
+    text-transform:uppercase; opacity:0.6;
+  }
+  .foc-able { transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+  .foc {
+    border-color:#ecc766 !important;
+    box-shadow:0 0 18px rgba(236,199,102,0.38);
+    transform:scale(1.035);
+  }
+
+  /* ——— top bar ——— */
+  .topbar { display:flex; gap:10px; align-items:stretch; height:54px; flex-shrink:0; }
+  .pill {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    border:1.5px solid rgba(255,255,255,0.32);
+    border-radius:16px;
+    background:rgba(255,255,255,0.05);
+    padding:0 16px;
+    font-size:14px; font-weight:500; letter-spacing:0.12em;
+  }
+  .pill.grow { flex:1; }
+  .pill.players { border-color:rgba(236,199,102,0.6); padding:0 14px; }
+  .pill.players .updown { font-size:15px; opacity:0.6; }
+  .pill.players .pnum {
+    font-size:26px; font-weight:600; color:#ecc766;
+    font-variant-numeric:tabular-nums; line-height:1;
+  }
+  .pill.players .plabel { font-size:10px; font-weight:600; letter-spacing:0.16em; opacity:0.75; }
+  .pill.players.bump .pnum { animation:bump 240ms ease; }
+  @keyframes bump { 40% { transform:scale(1.35); } }
+
+  /* ——— card sections ——— */
+  .sec { margin-top:9px; flex-shrink:0; }
+  .secline {
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:0 4px 5px;
+  }
+  .seclabel { font-size:13px; font-weight:600; letter-spacing:0.28em; opacity:0.85; }
+  .made { font-size:12px; font-weight:600; letter-spacing:0.1em; color:#ecc766;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:380px; }
+  .street { font-size:12px; font-weight:600; letter-spacing:0.18em; opacity:0.65; }
+  .row { display:flex; gap:12px; justify-content:center; }
+  .slot {
+    width:76px; height:106px; border-radius:10px;
+    border:1.5px solid rgba(255,255,255,0.28);
+    background:rgba(255,255,255,0.09);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; position:relative;
+  }
+  .slot .ghost { font-size:13px; letter-spacing:0.2em; opacity:0.35; }
+  .slot.filled { background:#f2f4ef; border-color:#f2f4ef; color:#20262b; }
+  .slot.filled.red { color:#d8323c; }
+  .slot .rank { font-size:34px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
+  .slot .rank.r10 { font-size:28px; }
+  .slot .suit { font-size:21px; line-height:1; }
+
+  /* ——— readout: WIN + advice ——— */
+  .readout { display:flex; gap:12px; margin-top:12px; height:96px; flex-shrink:0; }
+  .winbox {
+    flex:0 0 172px;
+    border:1.5px solid rgba(255,255,255,0.5);
+    border-radius:18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  }
+  .winval {
+    font-size:46px; font-weight:200; line-height:1;
+    font-variant-numeric:tabular-nums; letter-spacing:-0.02em;
+  }
+  .winval .pc { font-size:22px; font-weight:300; opacity:0.7; }
+  .advicebox {
+    flex:1;
+    border:1.5px solid rgba(255,255,255,0.28);
+    border-radius:18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    padding:0 14px; text-align:center;
+    transition:border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .adviceval {
+    font-size:27px; font-weight:500; letter-spacing:0.06em; line-height:1.05;
+    transition:color 200ms ease;
+  }
+  .advicesub { font-size:12px; opacity:0.6; letter-spacing:0.03em; }
+  .advicebox.tone-strong { border-color:rgba(236,199,102,0.85); box-shadow:0 0 22px rgba(236,199,102,0.22); }
+  .advicebox.tone-strong .adviceval { color:#ecc766; }
+  .advicebox.tone-good .adviceval { color:#9fdf9f; }
+  .advicebox.tone-good { border-color:rgba(159,223,159,0.6); }
+  .advicebox.tone-bad .adviceval { color:#ff6b6b; }
+  .advicebox.tone-bad { border-color:rgba(255,107,107,0.55); }
+  .advicebox.tone-none .adviceval { opacity:0.35; }
+
+  /* ——— equity / tie / lose + call-price rows ——— */
+  .statsrow {
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-top:10px; padding:0 6px; flex-shrink:0;
+  }
+  .stat { display:flex; align-items:baseline; gap:8px; }
+  .stat b { font-size:17px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .oddsmeta { font-size:10px; letter-spacing:0.14em; opacity:0.4; text-transform:uppercase; }
+  .pricerow {
+    display:flex; align-items:center; gap:8px;
+    margin-top:8px; padding:0 6px; flex-shrink:0;
+  }
+  .pricerow .klabel { margin-right:2px; }
+  .chip {
+    font-size:13px; font-weight:500; letter-spacing:0.06em;
+    border:1.25px solid rgba(255,255,255,0.22); border-radius:9px;
+    padding:2px 10px; opacity:0.4;
+    font-variant-numeric:tabular-nums;
+    transition:opacity 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  .chip.lit { opacity:1; color:#ecc766; border-color:rgba(236,199,102,0.75); }
+
+  /* ——— footer hints ——— */
+  footer { margin-top:auto; text-align:center; padding-bottom:2px; }
+  .hint { font-size:15px; font-weight:400; opacity:0.85; letter-spacing:0.02em; }
+  .legend { font-size:11.5px; opacity:0.42; letter-spacing:0.12em; margin-top:4px; }
+
+  /* ——— overlays ——— */
+  .overlay {
+    position:absolute; inset:0; z-index:10;
+    background:
+      radial-gradient(115% 80% at 50% -4%,
+        rgba(22, 62, 41, 0.55), rgba(10, 28, 18, 0.5) 55%, rgba(2,6,4,0.9) 85%),
+      #030805;
+    padding:24px 30px;
+    display:flex; flex-direction:column;
+  }
+  .ov-title {
+    text-align:center; font-size:15px; font-weight:600;
+    letter-spacing:0.26em; opacity:0.9;
+  }
+  .ov-hint { text-align:center; font-size:13px; opacity:0.55; letter-spacing:0.04em; margin-top:auto; padding-bottom:4px; }
+
+  /* suit step: tiles laid out to match swipe directions */
+  .suit-stage { position:relative; flex:1; margin:6px 0; }
+  .suit-tile {
+    position:absolute; width:126px; height:126px; border-radius:26px;
+    border:1.5px solid rgba(255,255,255,0.3);
+    background:rgba(255,255,255,0.05);
+    font-size:64px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    color:#f2f4ef;
+  }
+  .suit-tile .sname {
+    position:absolute; bottom:9px; font-size:9px; font-weight:600;
+    letter-spacing:0.22em; opacity:0.5; color:#eef2ec;
+  }
+  .suit-tile.red { color:#ff5f66; }
+  .suit-tile.up    { top:0;    left:50%; transform:translateX(-50%); }
+  .suit-tile.left  { left:34px;  top:50%; transform:translateY(-50%); }
+  .suit-tile.right { right:34px; top:50%; transform:translateY(-50%); }
+  .suit-tile.down  { bottom:0; left:50%; transform:translateX(-50%); }
+  .suit-tile.used { opacity:0.22; }
+  .suit-center {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:130px; height:130px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:13px; line-height:1.45; opacity:0.6; letter-spacing:0.05em;
+  }
+  .suit-center .arr { font-size:15px; opacity:0.8; }
+
+  /* rank step */
+  .rank-stage { flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .rank-suit { text-align:center; font-size:44px; line-height:1; margin-bottom:14px; }
+  .rank-suit.red { color:#ff5f66; }
+  .rank-grid {
+    display:grid; grid-template-columns:repeat(7, 1fr); gap:9px;
+    align-content:center;
+  }
+  .rk {
+    height:92px; border-radius:14px;
+    border:1.5px solid rgba(255,255,255,0.3);
+    background:rgba(255,255,255,0.05);
+    font-size:31px; font-weight:400;
+    display:flex; align-items:center; justify-content:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .rk.used { opacity:0.18; }
+  .rk.act { font-size:25px; opacity:0.85; }
+
+  /* hand rankings overlay */
+  .combos-list { flex:1; display:flex; flex-direction:column; justify-content:center; gap:6px; margin-top:10px; }
+  .crow {
+    display:flex; align-items:center; justify-content:space-between;
+    border:1.25px solid rgba(255,255,255,0.14); border-radius:12px;
+    padding:7px 16px;
+  }
+  .crow .cname { font-size:16px; font-weight:400; letter-spacing:0.03em; }
+  .crow .cex { font-size:15px; opacity:0.75; letter-spacing:0.08em; font-variant-numeric:tabular-nums; }
+  .crow .r { color:#ff5f66; }
+  .crow.cur { border-color:rgba(236,199,102,0.8); box-shadow:0 0 16px rgba(236,199,102,0.2); }
+  .crow.cur .cname { color:#ecc766; font-weight:500; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <header class="topbar">
+    <button class="pill players foc-able" id="btnPlayers" aria-label="Players">
+      <span class="updown">⇅</span>
+      <span class="pnum" id="playersNum">3</span>
+      <span class="plabel">PLAYERS</span>
+    </button>
+    <button class="pill grow foc-able" id="btnNew">NEW GAME</button>
+    <button class="pill foc-able" id="btnCombos">RANKINGS</button>
+  </header>
+
+  <section class="sec">
+    <div class="secline">
+      <span class="seclabel">HAND</span>
+      <span class="made" id="madeLabel"></span>
+    </div>
+    <div class="row" id="handRow"></div>
+  </section>
+
+  <section class="sec">
+    <div class="secline">
+      <span class="seclabel">BOARD</span>
+      <span class="street" id="streetLabel">PRE-FLOP</span>
+    </div>
+    <div class="row" id="boardRow"></div>
+  </section>
+
+  <section class="readout">
+    <div class="winbox">
+      <div class="klabel">Win</div>
+      <div class="winval" id="winVal">– –</div>
+    </div>
+    <div class="advicebox tone-none" id="adviceBox">
+      <div class="klabel">Advice</div>
+      <div class="adviceval" id="adviceVal">– –</div>
+      <div class="advicesub" id="adviceSub">enter your hand to begin</div>
+    </div>
+  </section>
+
+  <section class="statsrow">
+    <div class="stat"><span class="klabel">Equity</span><b id="eqVal">– –</b></div>
+    <div class="stat"><span class="klabel">Tie</span><b id="tieVal">– –</b></div>
+    <div class="stat"><span class="klabel">Lose</span><b id="loseVal">– –</b></div>
+    <span class="oddsmeta" id="oddsMeta"></span>
+  </section>
+
+  <section class="pricerow">
+    <span class="klabel">Call +EV vs</span>
+    <span id="priceChips" style="display:flex; gap:8px;"></span>
+  </section>
+
+  <footer>
+    <div class="hint" id="hintLine">Set your two hole cards</div>
+    <div class="legend">SWIPE ‹ › SLOTS · ↑↓ PLAYERS · PINCH SELECT</div>
+  </footer>
+
+  <!-- card picker -->
+  <div class="overlay hidden" id="picker">
+    <div class="ov-title" id="pickerTitle">HAND · CARD 1</div>
+    <div class="suit-stage" id="suitStage">
+      <button class="suit-tile up"         data-suit="0">♠<span class="sname">SPADES</span></button>
+      <button class="suit-tile left red"   data-suit="1">♥<span class="sname">HEARTS</span></button>
+      <button class="suit-tile right red"  data-suit="2">♦<span class="sname">DIAMONDS</span></button>
+      <button class="suit-tile down"       data-suit="3">♣<span class="sname">CLUBS</span></button>
+      <div class="suit-center" id="suitCenter"><span>swipe<br>toward suit<br><span class="arr">↑ ← → ↓</span></span></div>
+    </div>
+    <div class="rank-stage hidden" id="rankStage">
+      <div class="rank-suit" id="rankSuit">♠</div>
+      <div class="rank-grid" id="rankGrid"></div>
+    </div>
+    <div class="ov-hint" id="pickerHint"></div>
+  </div>
+
+  <!-- hand rankings -->
+  <div class="overlay hidden" id="combos">
+    <div class="ov-title">HAND RANKINGS</div>
+    <div class="combos-list" id="combosList"></div>
+    <div class="ov-hint">pinch to close</div>
+  </div>
+
+</div>
+
+<script src="./engine.js"></script>
+<script>
+(() => {
+  'use strict';
+  const E = window.PokerEngine;
+  const $ = (id) => document.getElementById(id);
+
+  // ===== State =====
+  // slots 0-1: hole cards · 2-6: board. Values are card ids or null.
+  const state = {
+    players: 3,
+    slots: [null, null, null, null, null, null, null],
+    focus: 3,              // index into the focus ring (0 players, 1 new, 2 ranks, 3.. slots)
+    picker: null,          // { slot, chain, step:'suit'|'rank', suit, rankFocus }
+    combos: false,
+    odds: null,            // latest message from the equity worker
+    oddsSeq: 0,
+    analysis: null,        // engine.analyze() result when board >= 3
+  };
+  const GROUPS = [[0, 1], [2, 3, 4], [5], [6]];   // hole cards, flop, turn, river
+  const SLOT_NAMES = ['HAND · CARD 1', 'HAND · CARD 2', 'FLOP · CARD 1',
+    'FLOP · CARD 2', 'FLOP · CARD 3', 'TURN', 'RIVER'];
+  const STORE_KEY = 'mrbd-poker-v1';
+
+  // ===== DOM =====
+  const els = {
+    playersNum: $('playersNum'),
+    btnPlayers: $('btnPlayers'), btnNew: $('btnNew'), btnCombos: $('btnCombos'),
+    handRow: $('handRow'), boardRow: $('boardRow'),
+    madeLabel: $('madeLabel'), streetLabel: $('streetLabel'),
+    winVal: $('winVal'),
+    adviceBox: $('adviceBox'), adviceVal: $('adviceVal'), adviceSub: $('adviceSub'),
+    eqVal: $('eqVal'), tieVal: $('tieVal'), loseVal: $('loseVal'), oddsMeta: $('oddsMeta'),
+    priceChips: $('priceChips'),
+    hintLine: $('hintLine'),
+    picker: $('picker'), pickerTitle: $('pickerTitle'), pickerHint: $('pickerHint'),
+    suitStage: $('suitStage'), suitCenter: $('suitCenter'),
+    rankStage: $('rankStage'), rankSuit: $('rankSuit'), rankGrid: $('rankGrid'),
+    combos: $('combos'), combosList: $('combosList'),
+  };
+  const slotEls = [];
+
+  function buildSlots() {
+    for (let i = 0; i < 7; i++) {
+      const b = document.createElement('button');
+      b.className = 'slot foc-able';
+      b.dataset.slot = i;
+      b.addEventListener('click', () => { state.focus = 3 + i; activate(state.focus); });
+      (i < 2 ? els.handRow : els.boardRow).appendChild(b);
+      slotEls.push(b);
+    }
+  }
+
+  // Rank keys: A..8 on the top row, 7..2 + "back to suits" on the bottom.
+  const RANK_KEYS = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 'BACK'];
+  const rankEls = [];
+  function buildRankGrid() {
+    RANK_KEYS.forEach((k, idx) => {
+      const b = document.createElement('button');
+      b.className = 'rk foc-able' + (k === 'BACK' ? ' act' : '');
+      b.textContent = k === 'BACK' ? '⌫' : E.RANKS[k];
+      b.addEventListener('click', () => {
+        if (!state.picker || state.picker.step !== 'rank') return;
+        state.picker.rankFocus = idx;
+        rankAct(idx);
+      });
+      els.rankGrid.appendChild(b);
+      rankEls.push(b);
+    });
+  }
+
+  const COMBO_ROWS = [
+    ['Royal flush',     'A♠ K♠ Q♠ J♠ 10♠'],
+    ['Straight flush',  '9♥ 8♥ 7♥ 6♥ 5♥'],
+    ['Four of a kind',  'Q♣ Q♦ Q♥ Q♠ 7♦'],
+    ['Full house',      'J♠ J♥ J♦ 4♣ 4♠'],
+    ['Flush',           'A♦ J♦ 8♦ 6♦ 2♦'],
+    ['Straight',        '10♣ 9♦ 8♠ 7♥ 6♣'],
+    ['Three of a kind', '7♠ 7♥ 7♦ A♣ K♠'],
+    ['Two pair',        'K♠ K♥ 9♦ 9♣ A♠'],
+    ['Pair',            '10♠ 10♥ A♦ 6♣ 3♠'],
+    ['High card',       'A♠ Q♥ 9♦ 5♣ 3♠'],
+  ];
+  function buildCombos() {
+    els.combosList.innerHTML = COMBO_ROWS.map(([name, ex]) => {
+      const html = ex.replace(/(\S+[♥♦])/g, '<span class="r">$1</span>');
+      return '<div class="crow"><span class="cname">' + name +
+             '</span><span class="cex">' + html + '</span></div>';
+    }).join('');
+  }
+
+  // ===== Derived state =====
+  const heroCards = () => [state.slots[0], state.slots[1]];
+  const handComplete = () => state.slots[0] != null && state.slots[1] != null;
+  const boardCards = () => state.slots.slice(2).filter((c) => c != null);
+  const boardCount = () => boardCards().length;
+
+  function streetName() {
+    const n = boardCount();
+    return n === 0 ? 'PRE-FLOP' : n <= 3 ? 'FLOP' : n === 4 ? 'TURN' : 'RIVER';
+  }
+
+  // ===== Persistence =====
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ players: state.players, slots: state.slots }));
+    } catch (e) { /* storage full/blocked: run without persistence */ }
+  }
+  function restore() {
+    try {
+      const d = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (!d || !Array.isArray(d.slots) || d.slots.length !== 7) return;
+      const seen = new Set();
+      const okSlots = d.slots.every((c) => {
+        if (c === null) return true;
+        if (!Number.isInteger(c) || c < 0 || c > 51 || seen.has(c)) return false;
+        seen.add(c);
+        return true;
+      });
+      if (okSlots) state.slots = d.slots;
+      if (Number.isInteger(d.players) && d.players >= 2 && d.players <= 9) state.players = d.players;
+    } catch (e) { /* corrupt store: start fresh */ }
+  }
+
+  // ===== Equity worker =====
+  let worker = null, pendingJob = null, fbToken = 0, oddsTimer = 0;
+
+  function startWorker() {
+    if (typeof Worker === 'undefined') return;
+    try {
+      const engineUrl = new URL('./engine.js', location.href).href;
+      const src =
+        'importScripts(' + JSON.stringify(engineUrl) + ');\n' +
+        'let cur = 0;\n' +
+        'onmessage = (e) => {\n' +
+        '  const job = e.data; cur = job.seq;\n' +
+        '  const E = self.PokerEngine;\n' +
+        '  if (job.exact) {\n' +
+        '    const r = E.exactHeadsUp(job.hero, job.board);\n' +
+        '    postMessage(Object.assign({ seq: job.seq, done: true }, r));\n' +
+        '    return;\n' +
+        '  }\n' +
+        '  const st = E.equitySetup(job.hero, job.board, job.opps);\n' +
+        '  const rng = E.makeRng(job.seed);\n' +
+        '  (function chunk() {\n' +
+        '    if (cur !== job.seq) return;\n' +
+        '    E.mcRun(st, Math.min(6000, job.target - st.iters), rng);\n' +
+        '    postMessage({ seq: job.seq, win: st.win, tie: st.tie, lose: st.lose,\n' +
+        '                  eq: st.eq, iters: st.iters, done: st.iters >= job.target });\n' +
+        '    if (st.iters < job.target) setTimeout(chunk, 0);\n' +
+        '  })();\n' +
+        '};';
+      worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      worker.onmessage = (e) => onOddsMsg(e.data);
+      worker.onerror = () => {          // e.g. importScripts blocked on file://
+        worker = null;
+        if (pendingJob) runFallback(pendingJob);
+      };
+    } catch (e) { worker = null; }
+  }
+
+  // Main-thread fallback: same math, smaller chunks between timeouts.
+  function runFallback(job) {
+    const token = ++fbToken;
+    if (job.exact) {
+      const r = E.exactHeadsUp(job.hero, job.board);
+      onOddsMsg(Object.assign({ seq: job.seq, done: true }, r));
+      return;
+    }
+    const st = E.equitySetup(job.hero, job.board, job.opps);
+    const rng = E.makeRng(job.seed);
+    (function chunk() {
+      if (token !== fbToken || job.seq !== state.oddsSeq) return;
+      E.mcRun(st, Math.min(2500, job.target - st.iters), rng);
+      onOddsMsg({ seq: job.seq, win: st.win, tie: st.tie, lose: st.lose,
+                  eq: st.eq, iters: st.iters, done: st.iters >= job.target });
+      if (st.iters < job.target) setTimeout(chunk, 0);
+    })();
+  }
+
+  function oddsEligible() {
+    const n = boardCount();
+    return handComplete() && (n === 0 || n >= 3);
+  }
+
+  function scheduleOdds() {
+    state.oddsSeq++;
+    state.odds = null;
+    renderOdds();
+    clearTimeout(oddsTimer);
+    if (!oddsEligible()) return;
+    oddsTimer = setTimeout(postJob, 140);
+  }
+
+  function postJob() {
+    const board = boardCards();
+    const opps = state.players - 1;
+    const exact = opps === 1 && board.length >= 4;
+    const target = board.length >= 3
+      ? (opps <= 2 ? 80000 : opps <= 4 ? 60000 : 40000)
+      : (opps <= 2 ? 60000 : opps <= 4 ? 40000 : 25000);
+    const job = {
+      seq: state.oddsSeq, hero: heroCards(), board, opps, exact, target,
+      seed: (Math.random() * 0x7fffffff) | 0,
+    };
+    pendingJob = job;
+    if (worker) worker.postMessage(job);
+    else runFallback(job);
+  }
+
+  function onOddsMsg(m) {
+    if (m.seq !== state.oddsSeq) return;
+    state.odds = m;
+    renderOdds();
+  }
+
+  // ===== Card entry / picker =====
+  function usedElsewhere(card, exceptSlot) {
+    return state.slots.some((c, i) => c === card && i !== exceptSlot);
+  }
+  function suitExhausted(suit, exceptSlot) {
+    for (let r = 0; r < 13; r++) if (!usedElsewhere((r << 2) | suit, exceptSlot)) return false;
+    return true;
+  }
+  function firstEmptyInSection(slot) {
+    const [lo, hi] = slot < 2 ? [0, 1] : [2, 6];
+    for (let i = lo; i <= hi; i++) if (state.slots[i] == null) return i;
+    return slot;
+  }
+  function nextChainSlot(slot) {
+    const g = GROUPS.find((grp) => grp.includes(slot));
+    for (const i of g) if (i > slot && state.slots[i] == null) return i;
+    return null;
+  }
+
+  function openPicker(slot, chain) {
+    state.picker = { slot, chain, step: 'suit', suit: 0, rankFocus: 0 };
+    render();
+  }
+  function closePicker() {
+    state.picker = null;
+    render();
+  }
+
+  function pickSuit(s) {
+    const p = state.picker;
+    if (!p || suitExhausted(s, p.slot)) return;
+    p.suit = s;
+    p.step = 'rank';
+    p.rankFocus = firstEnabledRank(0, +1);
+    render();
+  }
+
+  function rankDisabled(idx) {
+    const k = RANK_KEYS[idx];
+    if (k === 'BACK') return false;
+    return usedElsewhere((k << 2) | state.picker.suit, state.picker.slot);
+  }
+  function firstEnabledRank(from, dir) {
+    let i = ((from % 14) + 14) % 14;
+    for (let n = 0; n < 14; n++, i = (i + dir + 14) % 14) if (!rankDisabled(i)) return i;
+    return 0;
+  }
+  function moveRank(delta) {
+    const p = state.picker;
+    let i = p.rankFocus;
+    for (let n = 0; n < 14; n++) {
+      i = (i + delta + 14) % 14;
+      if (!rankDisabled(i)) { p.rankFocus = i; break; }
+      // keep stepping one cell at a time past disabled keys
+      delta = delta > 0 ? 1 : -1;
+    }
+    render();
+  }
+  function rankAct(idx) {
+    const p = state.picker;
+    const k = RANK_KEYS[idx];
+    if (k === 'BACK') { p.step = 'suit'; render(); return; }
+    if (rankDisabled(idx)) return;
+    placeCard(p.slot, (k << 2) | p.suit);
+  }
+
+  function placeCard(slot, card) {
+    state.slots[slot] = card;
+    afterCardsChanged();
+    const p = state.picker;
+    if (p && p.chain) {
+      const nxt = nextChainSlot(slot);
+      if (nxt != null) { openPicker(nxt, true); return; }
+    }
+    state.picker = null;
+    focusAfterFill();
+    render();
+  }
+
+  function clearSlot(slot) {
+    state.slots[slot] = null;
+    afterCardsChanged();
+    state.picker = null;
+    state.focus = 3 + slot;
+    render();
+  }
+
+  function afterCardsChanged() {
+    state.analysis = handComplete() && boardCount() >= 3
+      ? E.analyze(heroCards(), boardCards()) : null;
+    save();
+    scheduleOdds();
+  }
+
+  function focusAfterFill() {
+    for (let i = 0; i < 7; i++) {
+      if (state.slots[i] == null) { state.focus = 3 + i; return; }
+    }
+    state.focus = 1; // everything dealt: NEW GAME is the likely next tap
+  }
+
+  // ===== Players / actions =====
+  function setPlayers(p) {
+    const clamped = Math.max(2, Math.min(9, p));
+    if (clamped === state.players) { flashPlayers(); return; }
+    state.players = clamped;
+    save();
+    scheduleOdds();
+    flashPlayers();
+    render();
+  }
+  function flashPlayers() {
+    els.btnPlayers.classList.remove('bump');
+    void els.btnPlayers.offsetWidth;   // restart the one-shot animation
+    els.btnPlayers.classList.add('bump');
+  }
+
+  function newGame() {
+    state.slots = [null, null, null, null, null, null, null];
+    state.combos = false;
+    afterCardsChanged();
+    state.focus = 3;
+    openPicker(0, true);
+  }
+
+  function activate(focusIdx) {
+    if (focusIdx === 0) { setPlayers(state.players >= 9 ? 2 : state.players + 1); return; }
+    if (focusIdx === 1) { newGame(); return; }
+    if (focusIdx === 2) { state.combos = true; render(); return; }
+    const slot = focusIdx - 3;
+    if (state.slots[slot] == null) openPicker(firstEmptyInSection(slot), true);
+    else openPicker(slot, false);
+  }
+
+  // ===== Gestures =====
+  // The glasses forward Neural Band input as ArrowUp/Down/Left/Right + Enter.
+  // Desktop fallbacks: same arrows/Enter, Esc/Backspace as "back", clicks/taps.
+  let lastBack = 0;
+
+  function onGesture(g) {
+    if (state.combos) {
+      if (g === 'pinch' || g === 'back') { state.combos = false; render(); }
+      return;
+    }
+    if (state.picker) { pickerGesture(g); return; }
+    boardGesture(g);
+  }
+
+  function boardGesture(g) {
+    switch (g) {
+      case 'left':  state.focus = (state.focus + 9) % 10; render(); break;
+      case 'right': state.focus = (state.focus + 1) % 10; render(); break;
+      case 'up':    setPlayers(state.players + 1); break;
+      case 'down':  setPlayers(state.players - 1); break;
+      case 'pinch': activate(state.focus); break;
+      case 'back': {
+        const now = Date.now();
+        if (now - lastBack < 1400) { location.href = '../../index.html'; return; }
+        lastBack = now;
+        els.hintLine.textContent = 'Back again to exit';
+        setTimeout(render, 1400);
+        break;
+      }
+    }
+  }
+
+  function pickerGesture(g) {
+    const p = state.picker;
+    if (p.step === 'suit') {
+      const dirSuit = { up: 0, left: 1, right: 2, down: 3 };
+      if (g in dirSuit) { pickSuit(dirSuit[g]); return; }
+      if (g === 'pinch') {
+        if (state.slots[p.slot] != null) clearSlot(p.slot);
+        else closePicker();
+        return;
+      }
+      if (g === 'back') closePicker();
+      return;
+    }
+    // rank step
+    switch (g) {
+      case 'left':  moveRank(-1); break;
+      case 'right': moveRank(+1); break;
+      case 'up': case 'down': {
+        const i = (p.rankFocus + 7) % 14;
+        p.rankFocus = rankDisabled(i) ? firstEnabledRank(i, +1) : i;
+        render();
+        break;
+      }
+      case 'pinch': rankAct(p.rankFocus); break;
+      case 'back':  p.step = 'suit'; render(); break;
+    }
+  }
+
+  // ===== Render =====
+  const RING = () => [els.btnPlayers, els.btnNew, els.btnCombos, ...slotEls];
+
+  function render() {
+    els.playersNum.textContent = state.players;
+
+    // slots
+    const overlayOpen = !!state.picker || state.combos;
+    slotEls.forEach((el, i) => {
+      const c = state.slots[i];
+      const editing = state.picker && state.picker.slot === i;
+      if (c == null) {
+        el.className = 'slot foc-able';
+        el.innerHTML = '<span class="ghost">– –</span>';
+      } else {
+        el.className = 'slot foc-able filled' + (E.RED[c & 3] ? ' red' : '');
+        const r = E.RANKS[c >> 2];
+        el.innerHTML = '<span class="rank' + (r === '10' ? ' r10' : '') + '">' + r +
+                       '</span><span class="suit">' + E.SUITS[c & 3] + '</span>';
+      }
+      if (editing) el.classList.add('foc');
+    });
+
+    // focus ring (suppressed while an overlay is up)
+    RING().forEach((el, i) => {
+      el.classList.toggle('foc', !overlayOpen && i === state.focus);
+    });
+
+    // section labels
+    const n = boardCount();
+    els.streetLabel.textContent =
+      n === 0 ? 'PRE-FLOP' : n < 3 ? 'FLOP · ' + n + '/3' : n === 3 ? 'FLOP' : n === 4 ? 'TURN' : 'RIVER';
+
+    if (!handComplete()) {
+      els.madeLabel.textContent = '';
+    } else if (state.analysis) {
+      const a = state.analysis;
+      let txt = a.name;
+      if (a.draws.length) txt += ' · ' + a.draws.join(' · ');
+      if (a.outs > 0 && n < 5) txt += ' · ' + a.outs + ' OUTS';
+      els.madeLabel.textContent = txt;
+    } else {
+      els.madeLabel.textContent = E.handLabel(heroCards());
+    }
+
+    // hint line
+    els.hintLine.textContent =
+      !handComplete() ? 'Set your two hole cards' :
+      n === 0 ? 'Pre-flop odds below · add the flop as it comes' :
+      n < 3 ? 'Finish the flop' :
+      n === 3 ? 'Add the turn card when it comes' :
+      n === 4 ? 'Add the river card when it comes' :
+      'Showdown — final odds';
+
+    // picker overlay
+    els.picker.classList.toggle('hidden', !state.picker);
+    if (state.picker) {
+      const p = state.picker;
+      els.pickerTitle.textContent = SLOT_NAMES[p.slot];
+      els.suitStage.classList.toggle('hidden', p.step !== 'suit');
+      els.rankStage.classList.toggle('hidden', p.step !== 'rank');
+      if (p.step === 'suit') {
+        els.suitStage.querySelectorAll('.suit-tile').forEach((t) => {
+          t.classList.toggle('used', suitExhausted(+t.dataset.suit, p.slot));
+        });
+        els.pickerHint.textContent = state.slots[p.slot] != null
+          ? 'swipe = suit · pinch = remove card' : 'swipe = suit · pinch = cancel';
+      } else {
+        els.rankSuit.textContent = E.SUITS[p.suit];
+        els.rankSuit.className = 'rank-suit' + (E.RED[p.suit] ? ' red' : '');
+        rankEls.forEach((el, i) => {
+          el.classList.toggle('used', rankDisabled(i));
+          el.classList.toggle('foc', i === p.rankFocus);
+        });
+        els.pickerHint.textContent = 'swipe to a rank · pinch = set · ⌫ = suits';
+      }
+    }
+
+    // rankings overlay
+    els.combos.classList.toggle('hidden', !state.combos);
+    if (state.combos) {
+      let cur = -1;
+      if (state.analysis) {
+        const a = state.analysis;
+        cur = a.cat === 8 ? (a.sfHigh === 12 ? 0 : 1) : 9 - a.cat;
+      } else if (handComplete() && n === 0) {
+        cur = (state.slots[0] >> 2) === (state.slots[1] >> 2) ? 8 : 9;
+      }
+      els.combosList.querySelectorAll('.crow').forEach((row, i) => {
+        row.classList.toggle('cur', i === cur);
+      });
+    }
+
+    renderOdds();
+  }
+
+  function renderOdds() {
+    const o = state.odds;
+    const pct1 = (x) => (x * 100).toFixed(1) + '%';
+    if (!o) {
+      els.winVal.innerHTML = '– –';
+      els.eqVal.textContent = els.tieVal.textContent = els.loseVal.textContent = '– –';
+      els.oddsMeta.textContent = oddsEligible() ? 'DEALING…' : '';
+      els.adviceBox.className = 'advicebox tone-none';
+      els.adviceVal.textContent = '– –';
+      els.adviceSub.textContent = !handComplete()
+        ? 'enter your hand to begin'
+        : (boardCount() > 0 && boardCount() < 3) ? 'finish the flop for live odds' : 'crunching…';
+      renderPrices(null);
+      return;
+    }
+    const it = o.iters || 1;
+    els.winVal.innerHTML = Math.round((o.win / it) * 100) + '<span class="pc">%</span>';
+    els.eqVal.textContent = pct1(o.eq / it);
+    els.tieVal.textContent = pct1(o.tie / it);
+    els.loseVal.textContent = pct1(o.lose / it);
+    els.oddsMeta.textContent = o.exact
+      ? 'EXACT · ' + it.toLocaleString('en-US') + ' RUNOUTS'
+      : it.toLocaleString('en-US') + ' SAMPLES' + (o.done ? '' : ' · LIVE');
+
+    const share = o.eq / it;
+    const adv = E.advise(share, state.players, streetName(), state.analysis);
+    els.adviceBox.className = 'advicebox tone-' + adv.tone;
+    els.adviceVal.textContent = adv.action;
+    els.adviceSub.textContent = adv.sub +
+      ' · vs ' + (state.players - 1) + (state.players === 2 ? ' player' : ' players');
+    renderPrices(share);
+  }
+
+  function renderPrices(share) {
+    if (!els.priceChips.childElementCount) {
+      els.priceChips.innerHTML = E.CALL_PRICES
+        .map((p) => '<span class="chip">' + p.label + '</span>').join('');
+    }
+    const chips = els.priceChips.children;
+    E.CALL_PRICES.forEach((p, i) => {
+      chips[i].classList.toggle('lit', share != null && share >= p.be + 0.005);
+    });
+  }
+
+  // ===== Input wiring =====
+  const KEY_GESTURE = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    Enter: 'pinch', ' ': 'pinch', Escape: 'back', Backspace: 'back',
+  };
+  const KEY_RANK = { a: 12, k: 11, q: 10, j: 9, t: 8, 0: 8, 9: 7, 8: 6, 7: 5, 6: 4, 5: 3, 4: 2, 3: 1, 2: 0 };
+  const KEY_SUIT = { s: 0, h: 1, d: 2, c: 3 };
+
+  document.addEventListener('keydown', (e) => {
+    const g = KEY_GESTURE[e.key];
+    if (g) { e.preventDefault(); onGesture(g); return; }
+    // desktop speed keys inside the picker
+    const p = state.picker;
+    if (!p) return;
+    const k = e.key.toLowerCase();
+    if (p.step === 'suit' && k in KEY_SUIT) { e.preventDefault(); pickSuit(KEY_SUIT[k]); }
+    else if (p.step === 'rank' && k in KEY_RANK) {
+      const idx = RANK_KEYS.indexOf(KEY_RANK[k]);
+      if (!rankDisabled(idx)) { e.preventDefault(); p.rankFocus = idx; rankAct(idx); }
+    }
+  });
+
+  // touch: swipes anywhere; taps on non-buttons act as pinch
+  let tx = 0, ty = 0, tracking = false;
+  document.addEventListener('touchstart', (e) => {
+    const t = e.changedTouches[0];
+    tx = t.clientX; ty = t.clientY; tracking = true;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - tx, dy = t.clientY - ty;
+    if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
+      if (!e.target.closest('button')) onGesture('pinch');
+      return;
+    }
+    if (Math.abs(dx) > Math.abs(dy)) onGesture(dx > 0 ? 'right' : 'left');
+    else onGesture(dy > 0 ? 'down' : 'up');
+  }, { passive: true });
+
+  els.btnPlayers.addEventListener('click', () => { state.focus = 0; activate(0); });
+  els.btnNew.addEventListener('click', () => { state.focus = 1; activate(1); });
+  els.btnCombos.addEventListener('click', () => { state.focus = 2; activate(2); });
+  els.suitStage.querySelectorAll('.suit-tile').forEach((t) => {
+    t.addEventListener('click', () => pickSuit(+t.dataset.suit));
+  });
+  els.combos.addEventListener('click', () => { state.combos = false; render(); });
+
+  // ===== Boot =====
+  buildSlots();
+  buildRankGrid();
+  buildCombos();
+  restore();
+  startWorker();
+  state.analysis = handComplete() && boardCount() >= 3
+    ? E.analyze(heroCards(), boardCards()) : null;
+  focusAfterFill();
+  render();
+  scheduleOdds();
+})();
+</script>
+</body>
+</html>
