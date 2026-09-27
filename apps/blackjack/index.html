@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=600, height=600, initial-scale=1, user-scalable=no">
+  <meta name="mrbd-web-app-capable" content="yes">
+  <meta name="description" content="Play 3:2 blackjack with a virtual bankroll and optional basic-strategy training.">
+  <title>Blackjack HUD</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="stage" id="stage">
+  <header class="topbar">
+    <div class="metric"><span class="label" id="balanceLabel">Buy-in</span><span class="number" id="balance">$200</span></div>
+    <button class="mode" id="mode" data-focus="mode" aria-pressed="false">NORMAL</button>
+    <button class="sound" id="sound" data-focus="sound" aria-pressed="true" aria-label="Sound on">♪ ON</button>
+    <div class="metric right"><span class="label" id="betLabel">Blackjack</span><span class="number" id="headerBet">3:2</span></div>
+  </header>
+
+  <section id="setup" class="screen setup">
+    <div><h1>BLACKJACK</h1><p class="sub">SIX DECKS · $10 MINIMUM · PAYS 3:2</p></div>
+    <div>
+      <label class="label" for="buyin">Starting bankroll</label>
+      <div class="amount-picker">
+        <button id="less" aria-label="Decrease bankroll by one dollar">−</button>
+        <span class="dollar">$</span><input id="buyin" data-focus="buyin" type="number" inputmode="numeric" min="15" max="200" step="1" value="200" aria-describedby="buyinHint">
+        <button id="more" aria-label="Increase bankroll by one dollar">+</button>
+      </div>
+      <p class="sub" id="buyinHint">$15–$200 · ↑ ↓ $1 · hold for $10 steps</p>
+    </div>
+    <div class="start-rules">Dealer stands on all 17s<br>One seat · split into up to four hands</div>
+    <button class="primary wide" id="start" data-focus="start">TAKE A SEAT</button>
+    <p class="small">Virtual chips. Refresh to start a new session.</p>
+  </section>
+
+  <section id="betting" class="screen betting" hidden>
+    <div><div class="label">Build your bet</div><div class="bet-total" id="betTotal">$10</div><div class="sub" id="betHint">$10 minimum · $5 increments</div></div>
+    <div class="chip-rail" id="chipRail"></div>
+    <div class="sub">Pinch a chip to add · ↓ to remove</div>
+    <div class="bet-actions"><button id="clear" data-focus="clear">CLEAR</button><button id="go" data-focus="go" class="primary wide">GO</button></div>
+  </section>
+
+  <section id="table" class="screen table" hidden>
+    <div class="odds" id="odds" hidden>
+      <div><div class="label" id="oddsLabel">Estimated win</div><div class="odds-detail" id="oddsDetail">Calculating…</div></div>
+      <div class="odds-value" id="oddsValue">—</div>
+    </div>
+    <div class="hand-zone">
+      <div class="hand-heading"><span class="label">Dealer</span><span class="total" id="dealerTotal" hidden></span></div>
+      <div class="cards" id="dealerCards" aria-label="Dealer cards"></div>
+    </div>
+    <div class="hand-zone">
+      <div class="hand-heading"><span class="label" id="handLabel">Your hand</span><span class="total" id="playerTotal" hidden></span></div>
+      <div class="cards" id="playerCards" aria-label="Your cards"></div>
+    </div>
+    <div class="hand-strip" id="handStrip" hidden></div>
+    <div class="coach" id="coach"><div class="advice" id="advice"></div><div class="reason" id="reason"></div></div>
+    <div class="actions" id="actions">
+      <button id="hit" data-focus="hit">HIT</button><button id="stand" data-focus="stand">STAND</button><button id="double" data-focus="double">DOUBLE</button><button id="split" data-focus="split">SPLIT</button>
+    </div>
+    <button class="primary wide" id="next" data-focus="next" hidden>NEXT HAND</button>
+  </section>
+
+  <section id="broke" class="screen ending" hidden>
+    <h1>SESSION COMPLETE</h1><div class="bet-total" id="remaining"></div>
+    <p class="sub">Less than the $10 table minimum remains.</p>
+    <p class="sub">Refresh the app for a new bankroll.</p>
+    <button class="wide" id="exit" data-focus="exit">BACK TO APPS</button>
+  </section>
+  <footer id="hint">← → choose · ↑ ↓ adjust · pinch select</footer>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <div class="toast" id="toast" role="alert" hidden></div>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

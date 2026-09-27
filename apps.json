@@ -1,6 +1,12 @@
 {
   "apps": [
     {
+      "id": "blackjack",
+      "name": "Blackjack HUD",
+      "description": "Play 3:2 blackjack with virtual chips, optional strategy coaching, and live hand odds.",
+      "path": "apps/blackjack/"
+    },
+    {
       "id": "poker",
       "name": "Poker HUD",
       "description": "Live Texas Hold'em odds at the table: gesture-quick hand and board entry, win/equity percentages, and a recommended move.",
